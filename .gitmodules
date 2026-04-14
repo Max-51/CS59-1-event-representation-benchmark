@@ -1,0 +1,15 @@
+[submodule "third_party/est"]
+	path = third_party/est
+	url = https://github.com/uzh-rpg/rpg_event_representation_learning.git
+[submodule "third_party/ergo"]
+	path = third_party/ergo
+	url = https://github.com/uzh-rpg/event_representation_study.git
+[submodule "third_party/get"]
+	path = third_party/get
+	url = https://github.com/Peterande/GET-Group-Event-Transformer.git
+[submodule "third_party/matrixlstm"]
+	path = third_party/matrixlstm
+	url = https://github.com/marcocannici/matrixlstm.git
+[submodule "third_party/evrepsl"]
+	path = third_party/evrepsl
+	url = https://github.com/VincentQQu/EvRepSL.git
