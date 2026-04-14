@@ -2,7 +2,7 @@ title: "End-to-End Learning of Representations for Asynchronous Event-Based Data
 short_name: "EST"
 venue: "ICCV"
 year: 2019
-paper_url: ""
+paper_url: "https://arxiv.org/abs/1904.08245"
 code_url: "https://github.com/uzh-rpg/rpg_event_representation_learning"
 representation_type: "Learnable event-to-tensor (EST)"
 learning_type: "supervised"

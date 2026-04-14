@@ -2,7 +2,7 @@ title: "Group Event Transformer for Event-Based Vision"
 short_name: "GET"
 venue: "ICCV"
 year: 2023
-paper_url: ""
+paper_url: "https://arxiv.org/abs/2310.02642"
 code_url: "https://github.com/Peterande/GET-Group-Event-Transformer"
 representation_type: "Token-based representation"
 learning_type: "transformer"

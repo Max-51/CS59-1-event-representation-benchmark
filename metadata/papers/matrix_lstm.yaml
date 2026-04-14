@@ -2,7 +2,7 @@ title: "A Differentiable Recurrent Surface for Asynchronous Event-Based Data"
 short_name: "Matrix-LSTM"
 venue: "ECCV"
 year: 2020
-paper_url: ""
+paper_url: "https://arxiv.org/abs/2001.03455"
 code_url: "https://github.com/marcocannici/matrixlstm"
 representation_type: "Recurrent representation"
 learning_type: "rnn"

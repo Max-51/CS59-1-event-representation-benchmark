@@ -2,7 +2,7 @@ title: "Event-stream Representation via Self-Supervised Learning for Event-Based
 short_name: "EvRepSL"
 venue: "TIP"
 year: 2024
-paper_url: ""
+paper_url: "https://arxiv.org/abs/2412.07080"
 code_url: "https://github.com/VincentQQu/EvRepSL"
 representation_type: "Self-supervised representation"
 learning_type: "self-supervised"

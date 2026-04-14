@@ -2,7 +2,7 @@ title: "From Chaos Comes Order: Ordering Event Representations for Object Recogn
 short_name: "ERGO"
 venue: "ICCV"
 year: 2023
-paper_url: ""
+paper_url: "https://arxiv.org/abs/2304.13455"
 code_url: "https://github.com/uzh-rpg/event_representation_study"
 representation_type: "Ordered event representation"
 learning_type: "optimization-based"
