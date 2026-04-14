@@ -1,0 +1,18 @@
+title: "End-to-End Learning of Representations for Asynchronous Event-Based Data"
+short_name: "EST"
+venue: "ICCV"
+year: 2019
+paper_url: ""
+code_url: "https://github.com/uzh-rpg/rpg_event_representation_learning"
+representation_type: "Learnable event-to-tensor (EST)"
+learning_type: "supervised"
+tasks:
+  - classification
+  - optical_flow
+datasets:
+  - n_caltech101
+  - n_cars
+  - n_mnist
+backbone: "cnn"
+real_time: false
+efficiency_reported: false

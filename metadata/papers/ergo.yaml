@@ -1,0 +1,17 @@
+title: "From Chaos Comes Order: Ordering Event Representations for Object Recognition and Detection"
+short_name: "ERGO"
+venue: "ICCV"
+year: 2023
+paper_url: ""
+code_url: "https://github.com/uzh-rpg/event_representation_study"
+representation_type: "Ordered event representation"
+learning_type: "optimization-based"
+tasks:
+  - classification
+  - detection
+datasets:
+  - n_caltech101
+  - gen1
+backbone: "cnn/transformer"
+real_time: false
+efficiency_reported: false

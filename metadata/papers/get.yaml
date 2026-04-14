@@ -1,0 +1,18 @@
+title: "Group Event Transformer for Event-Based Vision"
+short_name: "GET"
+venue: "ICCV"
+year: 2023
+paper_url: ""
+code_url: "https://github.com/Peterande/GET-Group-Event-Transformer"
+representation_type: "Token-based representation"
+learning_type: "transformer"
+tasks:
+  - classification
+  - detection
+datasets:
+  - cifar10_dvs
+  - n_mnist
+  - gen1
+backbone: "transformer"
+real_time: false
+efficiency_reported: false

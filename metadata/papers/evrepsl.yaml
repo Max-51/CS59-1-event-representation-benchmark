@@ -1,0 +1,19 @@
+title: "Event-stream Representation via Self-Supervised Learning for Event-Based Vision"
+short_name: "EvRepSL"
+venue: "TIP"
+year: 2024
+paper_url: ""
+code_url: "https://github.com/VincentQQu/EvRepSL"
+representation_type: "Self-supervised representation"
+learning_type: "self-supervised"
+tasks:
+  - classification
+  - optical_flow
+datasets:
+  - n_caltech101
+  - n_cars
+  - cifar10_dvs
+  - mvsec
+backbone: "cnn"
+real_time: false
+efficiency_reported: false
