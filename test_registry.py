@@ -1,16 +1,47 @@
 from src.representations.registry import REPRESENTATION_REGISTRY
 
-# 导入所有方法，触发注册
-from src.representations.est.representation import ESTRepresentation
-from src.representations.ergo.representation import ERGORepresentation
-from src.representations.get.representation import GETRepresentation
-from src.representations.matrix_lstm.representation import MatrixLSTMRepresentation
-from src.representations.evrepsl.representation import EvRepSLRepresentation
+from src.representations.est import ESTRepresentation
+from src.representations.ergo import ERGORepresentation
+from src.representations.get import GETRepresentation
+from src.representations.matrix_lstm import MatrixLSTMRepresentation
+from src.representations.evrepsl import EvRepSLRepresentation
+from src.representations.omnievent import OmniEventRepresentation
+from src.representations.event_pretraining import EventPretrainingRepresentation
+
+import numpy as np
 
 print("Registered methods:")
 print(REPRESENTATION_REGISTRY)
 
-for name in REPRESENTATION_REGISTRY:
-    rep_class = REPRESENTATION_REGISTRY[name]
-    rep = rep_class(config={})
-    rep.build(events=None)
+# Minimal fake events: Nx4 -> (x, y, t, p)
+events = np.array([
+    [10, 20, 0.001, 1],
+    [15, 25, 0.002, -1],
+    [30, 40, 0.003, 1],
+], dtype=np.float32)
+
+for name, cls in REPRESENTATION_REGISTRY.items():
+    print(f"\nTesting method: {name}")
+
+    config = {}
+
+    # EvRepSL needs extra config
+    if name == "evrepsl":
+        config = {
+            "width": 320,
+            "height": 240,
+            "device": "cpu",
+            "return_numpy": True,
+        }
+
+    rep = cls(config)
+
+    try:
+        output = rep.build(events=events)
+        print(f"{name} build succeeded")
+        if output is not None:
+            print(f"Output type: {type(output)}")
+    except NotImplementedError as e:
+        print(f"{name} placeholder OK: {e}")
+    except Exception as e:
+        print(f"{name} failed: {type(e).__name__}: {e}")

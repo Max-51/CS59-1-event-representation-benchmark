@@ -1,0 +1,26 @@
+title: Event Camera Data Pre-training
+short_name: event_pretraining
+venue: ICCV
+year: 2023
+
+paper_url: https://arxiv.org/abs/2301.01928
+code_url: https://github.com/Yan98/Event-Camera-Data-Pre-training
+
+representation_type: transformer
+learning_type: self-supervised
+
+tasks:
+  - classification
+  - optical_flow
+
+datasets:
+  - N-Caltech101
+  - Gen1
+  - 1Mpx
+
+backbone:
+  - ResNet50
+  - ViT-S/16
+
+real_time: false
+efficiency_reported: false

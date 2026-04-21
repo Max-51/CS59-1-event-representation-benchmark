@@ -1,0 +1,27 @@
+title: OmniEvent: Unified Event Representation Learning
+short_name: omnievent
+venue: AAAI
+year: 2026
+
+paper_url: https://arxiv.org/abs/2508.01842
+code_url: null
+
+representation_type: unified
+learning_type: supervised
+
+tasks:
+  - classification
+  - optical_flow
+  - registration
+
+datasets:
+  - N-Caltech101
+  - N-MNIST
+  - CIFAR10-DVS
+  - N-CARS
+  - N-ImageNet
+
+backbone: standard vision backbones
+
+real_time: true
+efficiency_reported: false
