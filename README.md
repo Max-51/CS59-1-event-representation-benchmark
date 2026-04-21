@@ -3,8 +3,6 @@
 ## Overview
 This project focuses on benchmarking **learning-based event representations** for event camera data.
 
----
-
 ## Currently Included Methods
 - EST  
 - ERGO  
@@ -14,14 +12,10 @@ This project focuses on benchmarking **learning-based event representations** fo
 - OmniEvent  
 - Event Pre-training  
 
----
-
 ## Target Tasks
 - Classification  
 - Optical Flow  
 - Object Detection  
-
----
 
 ## Included Papers
 
@@ -35,24 +29,35 @@ This project focuses on benchmarking **learning-based event representations** fo
 | OmniEvent | [OmniEvent: Unified Event Representation Learning](https://arxiv.org/abs/2508.01842) | AAAI | 2026 | - |
 | Event Pre-training | [Event Camera Data Pre-training](https://arxiv.org/abs/2301.01928) | ICCV | 2023 | https://github.com/Yan98/Event-Camera-Data-Pre-training |
 
----
-
 ## Project Scope
 We focus on learning-based representations due to their flexibility, adaptability, and potential for end-to-end optimization.
 
----
-
 ## Repository Structure
 
-    docs/       : documentation and paper summaries  
-    metadata/   : structured information about papers and datasets  
-    configs/    : experiment configurations  
-    src/        : core benchmark framework  
-    scripts/    : training, evaluation, and preprocessing scripts  
-    data/       : dataset organization  
-    results/    : experiment outputs  
+- **data/**
+  - dataset organization
 
----
+- **docs/**
+  - documentation and paper summaries
+
+- **metadata/papers/**
+  - structured metadata for included papers
+
+- **src/**
+  - `datasets/` : dataset interfaces
+  - `representations/` : representation wrappers and registry
+  - `tasks/` : task interfaces
+
+- **third_party/**
+  - external reference implementations (Git submodules)
+
+- **Root Files**
+  - `.gitmodules` : submodule configuration
+  - `environment.yml` : environment setup (to be completed)
+  - `requirements.txt` : dependency list (placeholder)
+  - `run_benchmark.py` : benchmark entry script
+  - `test_registry.py` : registry testing script
+  - `test_evrepsl_local.py` : local EvRepSL testing script
 
 ## Current Status
 - Repository structure initialized  
