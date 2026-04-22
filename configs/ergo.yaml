@@ -1,12 +1,12 @@
-method: est
+method: ergo
 dataset:
   root: /path/to/N-Caltech101
   train_split: data/splits/train.txt
   test_split: data/splits/test.txt
 representation:
-  num_bins: 5
   height: 180
   width: 240
+  in_channels: 12
 epochs: 100
 batch_size: 32
 lr: 0.0001
