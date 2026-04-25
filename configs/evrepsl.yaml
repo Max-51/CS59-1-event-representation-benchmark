@@ -1,8 +1,6 @@
 method: evrepsl
 dataset:
-  root: /path/to/N-Caltech101
-  train_split: data/splits/train.txt
-  test_split: data/splits/test.txt
+  save_to: /path/to/datasets/ncaltech101
 representation:
   height: 180
   width: 240
