@@ -1,0 +1,56 @@
+{
+  "method": "EvRepSL",
+  "implementation_type": "EvRep Stage 1 (deterministic) + ResNet18 classifier",
+  "dataset": "N-Caltech101",
+  "split": "tonic_split_seed42",
+  "train_size": 6967,
+  "test_size": 1742,
+  "epochs": 100,
+  "batch_size": 32,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "optimizer": "Adam",
+  "scheduler": "CosineAnnealingLR (T_max=100, eta_min=1e-6)",
+  "seed": 42,
+  "num_workers": 4,
+  "input_channels": 3,
+  "num_classes": 101,
+  "best_test_accuracy": 0.6481,
+  "best_test_accuracy_pct": 64.81,
+  "gpu": "NVIDIA L4",
+  "non_time_metrics": {
+    "params_M": 17.8,
+    "macs_G": 5.48,
+    "flops_G": 10.96,
+    "gpu_forward_peak_mem_MB": 261.23,
+    "input_tensor_memory_MB": null,
+    "storage_MB_per_sample": null,
+    "input_nonzero_ratio": 0.2953,
+    "output_nonzero_ratio": 0.5666,
+    "event_utilization_ratio": null
+  },
+  "robustness_results": {
+    "sparsity_keep_ratio": {
+      "keep_100pct": 0.6481,
+      "keep_80pct": 0.6102,
+      "keep_60pct": 0.5103,
+      "keep_40pct": 0.2474,
+      "keep_20pct": 0.1165
+    },
+    "noise_sigma": {
+      "sigma_0.00": 0.6498,
+      "sigma_0.01": 0.6383,
+      "sigma_0.05": 0.5011,
+      "sigma_0.10": 0.2922,
+      "sigma_0.20": 0.1022
+    },
+    "max_events_sensitivity": {
+      "max_events_5000": 0.128,
+      "max_events_10000": 0.1734,
+      "max_events_20000": 0.442,
+      "max_events_50000": 0.6424
+    }
+  },
+  "limitations": "EvRepSL Stage 1 only (no RepGen pretrained weights). Stage 2 (RepGen EffWNet) requires separate download of RepGen.pth.",
+  "timestamp": "2026-04-26 06:28:35"
+}
