@@ -1,0 +1,66 @@
+{
+  "method": "EventOrdering",
+  "paper": "From Chaos Comes Order: Ordering Event Representations for Object Recognition and Detection",
+  "venue": "ICCV 2023",
+  "dataset": "N-Caltech101",
+  "split": "tonic_split_seed42",
+  "train_size": 6967,
+  "test_size": 1742,
+  "epochs": 100,
+  "batch_size": 32,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "seed": 42,
+  "num_workers": 4,
+  "optimizer": "Adam",
+  "scheduler": "CosineAnnealingLR",
+  "representation_type": "ERGO-12 (MixedDensityEventStack, SBN temporal windowing)",
+  "input_channels": 12,
+  "height": 180,
+  "width": 240,
+  "max_events": 50000,
+  "best_test_accuracy": 0.5873,
+  "best_test_accuracy_pct": 58.73,
+  "non_time_metrics": {
+    "params_M": 11.2565,
+    "MACs_G": 1.9552,
+    "FLOPs_G": 3.9105,
+    "GPU_forward_peak_memory_MB": 247.64,
+    "input_tensor_memory_MB": 1.9775,
+    "storage_best_model_MB": 43.02,
+    "input_nonzero_ratio": 0.2078,
+    "output_nonzero_ratio": 1.0,
+    "event_utilization_ratio": 0.1155
+  },
+  "robustness_results": {
+    "input_sparsity": {
+      "keep_100pct": 0.5873,
+      "keep_80pct": 0.508,
+      "keep_60pct": 0.2985,
+      "keep_40pct": 0.0999,
+      "keep_20pct": 0.0413
+    },
+    "noise_robustness": {
+      "sigma_0": 0.5873,
+      "sigma_0.01": 0.5838,
+      "sigma_0.05": 0.5528,
+      "sigma_0.1": 0.4977,
+      "sigma_0.2": 0.2882
+    },
+    "event_density": {
+      "max_events_5000": 0.1142,
+      "max_events_10000": 0.1521,
+      "max_events_20000": 0.3439,
+      "max_events_50000": 0.5873
+    }
+  },
+  "gpu": "NVIDIA L4",
+  "date": "2026-04-26 07:50:26",
+  "limitations": [
+    "ERGO-12 通道配置来自原论文 Bayesian 优化结果，本实现为独立 numpy/torch wrapper，不依赖 torch_scatter。",
+    "时间窗口采用 SBN 策略（按事件数量划分），具体窗口边界参见 representation.py 注释。",
+    "channel-wise min-max 归一化在 build() 中执行，以稳定训练；原论文是否有此步骤未明确记录。",
+    "batch_size=32，num_workers=4。若 OOM 请降低 batch_size。",
+    "鲁棒性测试中事件密度敏感性需重新构建 representation，num_workers 降为 2 以保持 Colab 稳定。"
+  ]
+}
