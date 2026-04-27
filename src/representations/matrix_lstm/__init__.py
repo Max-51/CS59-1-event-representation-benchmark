@@ -1,1 +1,2 @@
-from .representation import MatrixLSTMRepresentation
+from .representation import MatrixLSTMSurface
+__all__ = ['MatrixLSTMSurface']
