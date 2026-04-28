@@ -1,0 +1,62 @@
+method: get
+paper: 'GET: Group Event Transformer for Event-Based Vision'
+dataset:
+  name: N-Caltech101
+  root: /content/ncaltech101
+  split_file: data/splits/tonic_split_seed42.json
+  num_classes: 101
+  sensor_size:
+  - 240
+  - 180
+model:
+  architecture_type: original_GET_transformer
+  backbone: official_GET_transformer
+  input_format: raw_events_to_group_tokens
+  patch_size: 4
+  embed_dim: 48
+  depths:
+  - 2
+  - 2
+  - 8
+  num_heads:
+  - 3
+  - 6
+  - 12
+  window_size: 8
+  embed_split: 24
+  group_num: 12
+  drop_rate: 0.2
+  drop_path_rate: 0.2
+training:
+  max_epochs: 100
+  early_stopping_patience: 10
+  batch_size: 32
+  lr: 0.0008
+  weight_decay: 0.05
+  optimizer: AdamW
+  scheduler: cosine
+  warmup_epochs: 5
+  seed: 42
+  num_workers: 4
+  max_events: 50000
+  amp: true
+  use_checkpoint: true
+  pretrained: false
+  loss: CrossEntropyLoss
+evaluation:
+  metrics:
+  - top1_accuracy
+  - params_M
+  - MACs_G
+  - FLOPs_G
+  - GPU_forward_peak_memory_MB
+  - input_token_memory_MB
+  - event_utilization_ratio
+  - robustness_accuracy
+limitations:
+- Original GET paper did not evaluate on N-Caltech101.
+- This experiment is not an exact reproduction of an original N-Caltech101 result.
+- This experiment uses official GET Transformer architecture with benchmark-constrained
+  training.
+- Training is limited to max_epochs=100 with early_stopping_patience=10.
+- Mixup/Cutmix are not enabled.

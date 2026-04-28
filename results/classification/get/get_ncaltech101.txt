@@ -1,0 +1,57 @@
+=================================================================
+  GET on N-Caltech101 — Classification Results
+=================================================================
+  method               : GET
+  paper                : GET: Group Event Transformer for Event-Based Vision
+  dataset              : N-Caltech101
+  architecture_type    : original_GET_transformer
+  backbone             : official_GET_transformer
+  comparison_scope     : paper_faithful_architecture_benchmark_constrained_training
+  model_source         : direct_import_GET
+  forward_mode         : voxel_grid
+-----------------------------------------------------------------
+  train_size           : 6967
+  test_size            : 1742
+  num_classes          : 101
+  sensor_size          : [240, 180]
+-----------------------------------------------------------------
+  max_epochs           : 100
+  actual_epochs_trained: 89
+  actual_batch_size    : 16
+  learning_rate        : 0.0008
+  weight_decay         : 0.05
+  optimizer            : AdamW
+  scheduler            : cosine_with_warmup
+  warmup_epochs        : 5
+  seed                 : 42
+  amp                  : True
+  use_checkpoint       : unsupported_or_disabled
+  augmentations_used   : ['random_horizontal_flip_on_raw_events (prob=0.5, train only)']
+-----------------------------------------------------------------
+  BEST TEST ACCURACY   : 56.7164 %
+-----------------------------------------------------------------
+  params_M                    : 4.5959
+  MACs_G                      : None
+  FLOPs_G (approx 2xMACs)     : None
+  GPU_forward_peak_memory_MB  : 1195.44
+  input_token_memory_MB       : 3.955078
+  event_utilization_ratio     : 0.9754
+  token_nonzero_ratio         : None
+  checkpoint_size_MB          : 20.55
+-----------------------------------------------------------------
+  robustness_run       : True
+-----------------------------------------------------------------
+  gpu                  : NVIDIA A100-SXM4-80GB
+-----------------------------------------------------------------
+  Limitations:
+    - Original GET paper did not evaluate on N-Caltech101.
+    - This experiment is not an exact reproduction of an original N-Caltech101 result.
+    - This experiment uses the official GET Transformer architecture but applies a benchmark-constrained training protocol.
+    - Training is limited to max_epochs=100 with early_stopping_patience=10.
+    - Batch size may be reduced due to Colab L4 memory limits.
+    - GET is not evaluated as a CNN-based representation wrapper.
+    - Mixup/Cutmix are not enabled.
+    - Spatial-temporal crop is not implemented.
+    - Model source: direct_import_GET. If fallback voxel grid was used, E2SRC preprocessing may differ from original GET paper.
+    - forward_mode=voxel_grid.
+=================================================================
