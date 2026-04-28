@@ -1,0 +1,43 @@
+# EST End-to-End Classification on N-Caltech101
+# Original learnable QuantizationLayer + ResNet backbone.
+# Gradient flows: loss → ResNet → voxel → scatter → MLP (QuantizationLayer)
+
+method: est_e2e
+
+dataset:
+  name: N-Caltech101
+  save_to: /content/ncaltech101
+  split_file: data/splits/tonic_split_seed42.json
+  num_classes: 101
+
+representation:
+  height: 180
+  width: 240
+  num_bins: 9
+  max_events: 50000           # events per sample (subsample or pad to this)
+  input_channels: 18          # = 2 * num_bins
+
+model:
+  backbone: resnet18          # 'resnet18' (benchmark) or 'resnet34' (original paper)
+  quantization_hidden: 16     # MLP hidden size in QuantizationLayer
+
+training:
+  epochs: 100
+  batch_size: 16              # smaller than adaptation version due to raw event memory
+  lr: 0.0001
+  weight_decay: 0.0001
+  optimizer: adam
+  scheduler: cosine_annealing
+  seed: 42
+  num_workers: 4
+
+checkpoints:
+  dir: /content/drive/MyDrive/est_e2e_checkpoints
+  best_model: best_model.pth
+  latest: latest_checkpoint.pth
+
+notes:
+  - QuantizationLayer MLP is trained jointly with ResNet backbone
+  - Dataset returns raw events as (max_events, 5) tensor [x,y,t,p,valid_mask]
+  - batch_size=16 because each sample carries max_events raw events in memory
+  - For comparison with adaptation version see configs/est_ncaltech101.yaml

@@ -1,0 +1,81 @@
+============================================================
+EST End-to-End Classification Results — N-Caltech101
+============================================================
+
+[Implementation]
+  method              : EST (End-to-End, learnable QuantizationLayer)
+  implementation_type : Original EST end-to-end reproduction
+  gradient flow       : loss → ResNet → scatter_add → q → MLP ✓
+  compare with        : est_ncaltech101.txt  (fixed bilinear, no MLP)
+
+[Dataset & Split]
+  dataset    : N-Caltech101
+  split      : tonic_split_seed42
+  train_size : 6967
+  test_size  : 1742
+
+[Representation & Model]
+  num_bins       : 9
+  input_channels : 18  (= 2 × num_bins)
+  max_events     : 50000  (per sample)
+  backbone       : resnet18
+  QuantizationLayer : Linear(1→16) LeakyReLU Linear(16→9) ReLU
+
+[Training]
+  epochs_planned : 100
+  epochs_actual  : 66
+  early_stopping : patience=20  status=triggered at epoch 66
+  batch_size     : 16
+  learning_rate  : 0.0001
+  weight_decay   : 0.0001
+  optimizer      : Adam
+  scheduler      : CosineAnnealingLR (T_max=100)
+  seed           : 42
+  num_workers    : 0  (reduced from 4, DataLoader worker crash)
+
+[Results]
+  best_test_accuracy : 0.6429  (64.29%)
+
+[Non-Time Efficiency Metrics]
+  params_M                           : 11.2756
+  quant_params                       : 185
+  backbone_params                    : 11275365
+  backbone_macs_G                    : 2.1585
+  quant_macs_G                       : 0.008
+  total_macs_G                       : 2.1665
+  flops_G                            : 4.3329
+  gpu_forward_peak_mem_MB            : 95.91
+  input_tensor_mem_MB                : 15.26
+  storage_MB_per_sample              : 0.9537
+  input_nonzero_ratio                : 0.194
+  event_utilization_ratio            : 1.0
+
+[Robustness — Sparsity (keep_ratio)]
+  keep_100pct              : 0.6355
+  keep_80pct               : 0.6292
+  keep_60pct               : 0.6091
+  keep_40pct               : 0.5603
+  keep_20pct               : 0.4208
+
+[Robustness — Noise (Gaussian sigma)]
+  sigma_0.00               : 0.6383
+  sigma_0.01               : 0.2928
+  sigma_0.05               : 0.0603
+  sigma_0.10               : 0.0551
+  sigma_0.20               : 0.0557
+
+[Sensitivity — Event Density (max_events)]
+  max_events_5000               : 0.2090
+  max_events_10000              : 0.4185
+  max_events_20000              : 0.5545
+  max_events_50000              : 0.6395
+
+[Notes]
+  num_workers reduced from 4 to 0 (DataLoader worker crash,
+  each sample = 50000×5 float32 = 1.0 MB)
+
+[Hardware]
+  gpu : NVIDIA L4
+
+Generated: 2026-04-28 10:18:53
+============================================================
