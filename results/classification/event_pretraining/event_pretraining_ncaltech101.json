@@ -1,0 +1,63 @@
+{
+  "method": "Event Camera Data Pre-training",
+  "paper": "Event Camera Data Pre-training, ICCV 2023",
+  "dataset": "N-Caltech101",
+  "split": "tonic_split_seed42",
+  "experiment_type": "small_scale_simclr_pretrain",
+  "train_size": 6967,
+  "test_size": 1742,
+  "pretrain_epochs": 100,
+  "pretrain_lr": 0.001,
+  "pretrain_temperature": 0.5,
+  "pretrain_best_loss": 2.2092,
+  "max_epochs": 100,
+  "early_stopping": true,
+  "patience": 10,
+  "best_epoch": 58,
+  "stopped_epoch": 68,
+  "reason_for_stopping": "early_stopping_patience_10",
+  "batch_size": 32,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "optimizer": "AdamW",
+  "scheduler": "CosineAnnealingLR",
+  "seed": 42,
+  "num_workers": 4,
+  "input_channels": 2,
+  "best_test_accuracy": 0.6412,
+  "gpu": "NVIDIA L4",
+  "non_time_metrics": {
+    "params_M": 11.2252,
+    "MACs_G": 1.7842,
+    "FLOPs_G": 3.5685,
+    "gpu_forward_peak_mem_MB": 439.62,
+    "input_tensor_mem_MB": 0.4014,
+    "storage_MB": 44.98,
+    "input_nonzero_ratio": 0.2228,
+    "output_nonzero_ratio": 1.0,
+    "event_utilization_ratio": 0.2894
+  },
+  "robustness_results": {
+    "sparsity": {
+      "keep_100pct": 0.6338,
+      "keep_80pct": 0.6188,
+      "keep_60pct": 0.5769,
+      "keep_40pct": 0.4656,
+      "keep_20pct": 0.2199
+    },
+    "noise": {
+      "sigma_0": 0.6326,
+      "sigma_0.01": 0.3289,
+      "sigma_0.05": 0.0436,
+      "sigma_0.1": 0.0075,
+      "sigma_0.2": 0.008
+    },
+    "event_density": {
+      "max_events_5000": 0.0993,
+      "max_events_10000": 0.2245,
+      "max_events_20000": 0.4747,
+      "max_events_50000": 0.6303
+    }
+  },
+  "limitations": "Small-scale SimCLR adaptation：在 N-Caltech101 train split (~7000样本) 上做自监督对比预训练，再 finetune。原论文在 N-ImageNet (~100万样本) + ImageNet 配对数据上预训练，使用 MoCo V3 双模态对比学习 + density-aware masking + ViT backbone。本实验保留了论文的预训练→微调范式和 2-channel polarity 事件编码，但规模、模态、backbone 均有差异，为小规模适配版本，非完整复现。"
+}
