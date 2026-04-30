@@ -35,6 +35,12 @@ METHODS = [
     "get",
     "event_pretraining",
     "matrix_lstm",
+    "event_frame",
+    "event_count",
+    "binary_event_image",
+    "timestamp_image",
+    "time_surface",
+    "voxel_grid",
 ]
 
 
@@ -227,6 +233,10 @@ def main():
         save_json(progress_file, progress)
         append_jsonl(history_file, progress)
 
+        args_dict = vars(args).copy()
+        ckpt = checkpoint_payload(epoch, model, optimizer, scheduler, best_metric, args_dict)
+        ckpt["best_metric_name"] = args.early_stop_metric
+
         if improved:
             best_metric = current_metric
             best_epoch = epoch + 1
@@ -247,10 +257,7 @@ def main():
             run_summary["best_metric"] = None if best_metric == float("-inf") else best_metric
 
         run_summary["completed_epochs"] = epoch + 1
-        args_dict = vars(args).copy()
-        ckpt = checkpoint_payload(epoch, model, optimizer, scheduler, best_metric, args_dict)
         ckpt["best_metric"] = best_metric
-        ckpt["best_metric_name"] = args.early_stop_metric
         ckpt["best_epoch"] = best_epoch
         ckpt["best_map50"] = run_summary["best_map50"]
         ckpt["best_map50_95"] = run_summary["best_map50_95"]

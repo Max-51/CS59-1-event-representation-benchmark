@@ -13,6 +13,12 @@ DEFAULT_GEN1_METHOD_CONFIGS = {
     "evrepsl": {"variant": "evrep"},
     "get": {"variant": "tokens", "group_num": 12, "patch_size": 4},
     "event_pretraining": {"variant": "group_tokens", "group_num": 12, "patch_size": 4},
+    "event_frame": {},
+    "event_count": {},
+    "binary_event_image": {},
+    "timestamp_image": {},
+    "time_surface": {},
+    "voxel_grid": {"bins": 5},
 }
 
 

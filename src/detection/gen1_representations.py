@@ -1,5 +1,13 @@
 import numpy as np
 
+from src.representations.traditional import (
+    BinaryEventImageRepresentation,
+    EventFrameRepresentation,
+    TimeSurfaceRepresentation,
+    TimestampImageRepresentation,
+    VoxelGridRepresentation,
+)
+
 
 def normalized_events(events, width, height, polarity="zero_one"):
     arr = np.asarray(events)
@@ -170,6 +178,17 @@ class MatrixLSTMGen1Representation:
         return normalize_channels(output)
 
 
+class TraditionalGen1Representation:
+    def __init__(self, representation_cls, config):
+        self.representation = representation_cls(config)
+
+    def build(self, events):
+        tensor = self.representation.build(events)
+        if hasattr(tensor, "detach"):
+            return tensor.detach().cpu().numpy().astype(np.float32)
+        return np.asarray(tensor, dtype=np.float32)
+
+
 def create_gen1_representation(method, config):
     method = method.lower()
     if method == "est":
@@ -184,4 +203,14 @@ def create_gen1_representation(method, config):
         return TokenGridGen1Representation(config)
     if method == "matrix_lstm":
         return MatrixLSTMGen1Representation(config)
+    if method in ("event_frame", "event_count"):
+        return TraditionalGen1Representation(EventFrameRepresentation, config)
+    if method == "binary_event_image":
+        return TraditionalGen1Representation(BinaryEventImageRepresentation, config)
+    if method == "timestamp_image":
+        return TraditionalGen1Representation(TimestampImageRepresentation, config)
+    if method == "time_surface":
+        return TraditionalGen1Representation(TimeSurfaceRepresentation, config)
+    if method == "voxel_grid":
+        return TraditionalGen1Representation(VoxelGridRepresentation, config)
     raise KeyError(f"Unknown GEN1 representation method: {method}")
