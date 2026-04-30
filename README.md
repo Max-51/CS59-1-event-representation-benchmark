@@ -17,6 +17,26 @@ This project focuses on benchmarking **learning-based event representations** fo
 - Optical Flow  
 - Object Detection  
 
+## Traditional Baselines
+
+The repository also includes traditional event-representation baselines for the
+survey/baseline track:
+
+- Event frame / event count
+- Binary event image
+- Timestamp image
+- Time surface
+- Voxel grid
+
+These methods share a simple interface: `events -> C x H x W` float32 tensors.
+They are wired into N-MNIST / N-Caltech101 classification, GEN1 detection, and
+MVSEC optical flow adapters.
+
+For a Chinese step-by-step guide, including smoke tests and recommended run
+order, see:
+
+- `docs/traditional_baseline_guide_zh.md`
+
 ## Included Papers
 
 | Method | Paper | Venue | Year | Code |
