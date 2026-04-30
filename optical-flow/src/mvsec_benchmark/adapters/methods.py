@@ -13,6 +13,13 @@ from .evrepsl import EvRepSLAdapter
 from .est import EstAdapter
 from .get import GetAdapter
 from .matrixlstm import MatrixLSTMAdapter
+from .traditional import (
+    BinaryEventImageAdapter,
+    EventFrameAdapter,
+    TimeSurfaceAdapter,
+    TimestampImageAdapter,
+    VoxelGridAdapter,
+)
 
 
 @dataclass
@@ -62,5 +69,24 @@ def build_adapters() -> dict[str, Any]:
             AdapterSpec("omnievent", channels=12, source_status="native-flow-paper-reported", notes="OmniEvent placeholder until upstream code matures"),
             time_bins=6,
             split_polarity=True,
+        ),
+        "event_frame": EventFrameAdapter(
+            AdapterSpec("event_frame", channels=2, source_status="traditional-baseline", notes="Two-channel positive/negative event count frame"),
+        ),
+        "event_count": EventFrameAdapter(
+            AdapterSpec("event_count", channels=2, source_status="traditional-baseline", notes="Alias for two-channel event count frame"),
+        ),
+        "binary_event_image": BinaryEventImageAdapter(
+            AdapterSpec("binary_event_image", channels=2, source_status="traditional-baseline", notes="Two-channel positive/negative binary occupancy image"),
+        ),
+        "timestamp_image": TimestampImageAdapter(
+            AdapterSpec("timestamp_image", channels=2, source_status="traditional-baseline", notes="Latest normalized timestamp image split by polarity"),
+        ),
+        "time_surface": TimeSurfaceAdapter(
+            AdapterSpec("time_surface", channels=2, source_status="traditional-baseline", notes="Exponential recency surface split by polarity"),
+        ),
+        "voxel_grid": VoxelGridAdapter(
+            AdapterSpec("voxel_grid", channels=10, source_status="traditional-baseline", notes="Five-bin polarity-separated voxel grid"),
+            bins=5,
         ),
     }

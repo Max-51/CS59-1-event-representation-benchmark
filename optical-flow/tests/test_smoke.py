@@ -30,7 +30,7 @@ class SmokeTest(unittest.TestCase):
             self.assertTrue(math.isfinite(metrics.outlier_percent), name)
             self.assertGreater(metrics.valid_count, 0, name)
 
-    def test_run_smoke_returns_seven_methods(self):
+    def test_run_smoke_returns_learning_and_traditional_methods(self):
         results = run_smoke()
         self.assertEqual(set(results.keys()), {
             "est",
@@ -40,6 +40,12 @@ class SmokeTest(unittest.TestCase):
             "matrixlstm",
             "evrepsl",
             "omnievent",
+            "event_frame",
+            "event_count",
+            "binary_event_image",
+            "timestamp_image",
+            "time_surface",
+            "voxel_grid",
         })
 
 
