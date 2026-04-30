@@ -59,7 +59,43 @@ We focus on learning-based representations due to their flexibility, adaptabilit
   - `test_registry.py` : registry testing script
   - `test_evrepsl_local.py` : local EvRepSL testing script
 
-## Current Status
-- Repository structure initialized  
-- Paper analysis in progress  
-- Benchmark implementation upcoming  
+## GEN1 Detection Workflow
+
+The current training path is built around a unified preprocessing index:
+
+1. Build fixed 50 ms GEN1 window metadata once:
+
+```bash
+python scripts/build_gen1_window_index.py --root /path/to/detection_dataset_duration_60s_ratio_1.0
+```
+
+2. Train one representation method at a time:
+
+```bash
+python train_gen1_detection.py --root /path/to/detection_dataset_duration_60s_ratio_1.0 --method ergo
+```
+
+3. Or run the full six-method benchmark in one command:
+
+```bash
+python run_all_gen1_methods.py \
+  --root /path/to/detection_dataset_duration_60s_ratio_1.0 \
+  --methods ergo est evrepsl get event_pretraining matrix_lstm \
+  --epochs 100 \
+  --batch-size 32 \
+  --num-workers 4 \
+  --early-stop-patience 15 \
+  --early-stop-metric map50_95 \
+  --img-size 320 \
+  --lr 0.01 \
+  --device cuda \
+  --resume
+```
+
+4. Summarize all finished method runs:
+
+```bash
+python summarize_gen1_results.py
+```
+
+This keeps preprocessing shared, avoids storing duplicated event windows, and writes per-method checkpoints, logs, progress files, and metrics under `outputs/benchmark/`. The full benchmark runner skips methods that already have test metrics unless `--force` is passed.

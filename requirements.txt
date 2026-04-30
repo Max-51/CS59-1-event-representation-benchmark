@@ -1,0 +1,10 @@
+addict>=2.4.0
+numpy>=1.24
+opencv-python-headless>=4.8
+PyYAML>=6.0
+scipy>=1.10
+timm>=0.9
+tqdm>=4.66
+
+# Install PyTorch/torchvision from the server image or the official PyTorch
+# command matching your CUDA version. AutoDL PyTorch images already include it.

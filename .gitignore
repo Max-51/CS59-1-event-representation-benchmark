@@ -3,3 +3,11 @@ __pycache__/
 results/
 *.zip
 .DS_Store
+outputs/
+runs/
+checkpoints/
+*.log
+metadata/gen1_windows*/
+*.pt
+*.pth
+*.onnx
