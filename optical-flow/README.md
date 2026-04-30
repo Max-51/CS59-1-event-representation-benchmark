@@ -18,7 +18,7 @@ Current status:
 - minimal MVSEC-style loader and a CPU-friendly linear flow benchmark loop
 - real MVSEC smoke, indoor-only controlled runs, and the formal original-style
   AutoDL run are archived and documented
-- AutoDL handoff and current experiment state in `docs/CLAUDE_CODE_HANDOFF.md`
+- AutoDL run notes and current experiment state in `docs/PROJECT_STATUS.md`
 - review of remaining scientific limitations in
   `docs/MVSEC_TASK_REVIEW_20260426.md`
 
@@ -29,7 +29,7 @@ reported-only because its current public code path is not runnable for this
 downstream task.
 
 For continuing or auditing the AutoDL work, start from
-`docs/CLAUDE_CODE_HANDOFF.md`. That file records which runs are already done,
+`docs/PROJECT_STATUS.md`. That file records which runs are already done,
 which files exist on the data disk, and the exact command for the completed
 outdoor-train / indoor-test protocol.
 

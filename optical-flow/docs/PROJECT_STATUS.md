@@ -1,10 +1,10 @@
-# Claude Code Handoff: MVSEC Optical Flow Benchmark
+# Project Status: MVSEC Optical Flow Benchmark
 
 Last updated: 2026-04-30
 
-This file is the machine-readable handoff for continuing the COMP5703 MVSEC
-optical-flow reproduction work. Do not rely only on the Obsidian note; this
-document is the operational source of truth for Claude Code.
+This file records the current state of the COMP5703 MVSEC optical-flow
+reproduction work. Do not rely only on the Obsidian note; this document is the
+operational source of truth for continuing the optical-flow experiments.
 
 ## Current Goal
 

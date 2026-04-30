@@ -48,6 +48,6 @@ does not contain raw MVSEC data.
 
 - `README.md`
 - `docs/MVSEC_TASK_REVIEW_20260426.md`
-- `docs/CLAUDE_CODE_HANDOFF.md`
+- `docs/PROJECT_STATUS.md`
 - `scripts/autodl_outdoor_pipeline.sh`
 - `scripts/run_original_protocol.py`
