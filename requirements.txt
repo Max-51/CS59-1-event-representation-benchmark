@@ -4,6 +4,7 @@ opencv-python-headless>=4.8
 PyYAML>=6.0
 scipy>=1.10
 timm>=0.9
+tonic>=1.5.0
 tqdm>=4.66
 
 # Install PyTorch/torchvision from the server image or the official PyTorch

@@ -1,0 +1,29 @@
+dataset:
+  name: N-MNIST
+  split: official_train_test
+  num_classes: 10
+
+representation:
+  methods:
+    - event_frame
+    - binary_event_image
+    - timestamp_image
+    - time_surface
+    - voxel_grid
+  height: 34
+  width: 34
+  bins: 5
+  max_events: 50000
+
+training:
+  downstream_model: ResNet18
+  epochs: 100
+  early_stop_patience: 10
+  batch_size: 32
+  lr: 0.0001
+  weight_decay: 0.0001
+  seed: 42
+  num_workers: 4
+
+outputs:
+  root: outputs/traditional/classification/nmnist
