@@ -37,6 +37,11 @@ order, see:
 
 - `docs/traditional_baseline_guide_zh.md`
 
+Classification result tables, training histories, and quick-look figures for
+the traditional N-MNIST and N-Caltech101 runs are available in:
+
+- `artifacts/traditional_classification/`
+
 ## Included Papers
 
 | Method | Paper | Venue | Year | Code |

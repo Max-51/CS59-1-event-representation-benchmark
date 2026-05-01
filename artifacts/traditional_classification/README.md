@@ -34,6 +34,25 @@ to regenerate the summaries from local experiment archives.
 - `build_traditional_classification_report.py`: local helper used to parse the
   downloaded experiment archives and regenerate the CSV/figure files.
 
+## Regenerate Tables and Figures
+
+The helper expects the lightweight experiment archives downloaded from the
+training machine:
+
+- `nmnist_traditional_records.tar.gz`
+- `ncaltech101_traditional_records.tar.gz`
+
+Example:
+
+```bash
+python artifacts/traditional_classification/build_traditional_classification_report.py \
+  --input-dir /path/to/downloaded/archives \
+  --output-dir artifacts/traditional_classification
+```
+
+The plotting helper uses `pandas` and `matplotlib`. They are only needed for
+regenerating these result summaries, not for running the benchmark itself.
+
 ## Current Results
 
 | Dataset | Method | Best Epoch | Best Val Acc | Test Acc | Time (s) |

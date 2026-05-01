@@ -4,6 +4,9 @@ import json
 import tarfile
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -41,13 +44,11 @@ def collect_dataset(dataset, archive, prefix):
             metrics_path = f"{base}/metrics.json"
             history_path = f"{base}/history.jsonl"
             config_path = f"{base}/config.json"
-            stats_path = f"{base}/representation_stats.json"
             if metrics_path not in names:
                 raise FileNotFoundError(metrics_path)
 
             metrics = read_json_from_tar(tar, metrics_path)
             config = read_json_from_tar(tar, config_path) if config_path in names else {}
-            stats = read_json_from_tar(tar, stats_path) if stats_path in names else {}
             training = metrics.get("training", config.get("training", {}))
             test = metrics.get("test", {})
             test_rep = test.get("representation", {})
