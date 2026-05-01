@@ -1,0 +1,11 @@
+dataset,task,method,method_label,type,best_epoch,best_val_accuracy,test_accuracy,test_loss,total_seconds,stopped_early,epochs,batch_size,device,input_channels,test_samples,mean_events_test,mean_build_seconds_test,shape_counts_test,records_archive
+nmnist,classification,event_frame,Event Frame,Traditional,29,0.985,0.9828,0.065333,2365.4,True,100,32,cuda,2,10000,4203.6067,0.001283,"{""2x34x34"": 10000}",nmnist_traditional_records.tar.gz
+nmnist,classification,binary_event_image,Binary Event Image,Traditional,16,0.9565,0.9506,0.198405,1219.36,True,100,32,cuda,2,10000,4203.6067,0.000447,"{""2x34x34"": 10000}",nmnist_traditional_records.tar.gz
+nmnist,classification,timestamp_image,Timestamp Image,Traditional,6,0.984833,0.9805,0.065695,786.48,True,100,32,cuda,2,10000,4203.6067,0.000574,"{""2x34x34"": 10000}",nmnist_traditional_records.tar.gz
+nmnist,classification,time_surface,Time Surface,Traditional,26,0.989833,0.9863,0.05623,1859.29,True,100,32,cuda,2,10000,4203.6067,0.000675,"{""2x34x34"": 10000}",nmnist_traditional_records.tar.gz
+nmnist,classification,voxel_grid,Voxel Grid,Traditional,12,0.992,0.9908,0.03406,1266.66,True,100,32,cuda,10,10000,4203.6067,0.00103,"{""10x34x34"": 10000}",nmnist_traditional_records.tar.gz
+ncaltech101,classification,event_frame,Event Frame,Traditional,13,0.483501,0.496556,2.192656,1020.28,True,100,32,cuda,2,1742,115598.2497,0.012666,"{""2x180x240"": 1742}",ncaltech101_traditional_records.tar.gz
+ncaltech101,classification,binary_event_image,Binary Event Image,Traditional,20,0.457676,0.486797,2.253343,956.5,True,100,32,cuda,2,1742,115598.2497,0.005723,"{""2x180x240"": 1742}",ncaltech101_traditional_records.tar.gz
+ncaltech101,classification,timestamp_image,Timestamp Image,Traditional,13,0.500717,0.529277,2.006744,793.65,True,100,32,cuda,2,1742,115598.2497,0.007121,"{""2x180x240"": 1742}",ncaltech101_traditional_records.tar.gz
+ncaltech101,classification,time_surface,Time Surface,Traditional,13,0.492109,0.517796,2.039767,838.09,True,100,32,cuda,2,1742,115598.2497,0.008318,"{""2x180x240"": 1742}",ncaltech101_traditional_records.tar.gz
+ncaltech101,classification,voxel_grid,Voxel Grid,Traditional,11,0.500717,0.496556,2.111234,974.24,True,100,32,cuda,10,1742,115598.2497,0.010069,"{""10x180x240"": 1742}",ncaltech101_traditional_records.tar.gz

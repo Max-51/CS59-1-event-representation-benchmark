@@ -1,0 +1,2 @@
+dataset,task,method,method_label,type,best_epoch,best_val_accuracy,test_accuracy,test_loss,total_seconds,stopped_early,epochs,batch_size,device,downstream_model,split,notes
+nmnist,classification,example_learning_method,Example Learning Method,Learning-based,,,,,,,,,cuda,ResNet18,"official train/test, train split validation",Replace this row with benchmark-group results.
