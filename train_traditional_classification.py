@@ -160,27 +160,50 @@ def build_tonic_dataset(tonic, dataset_name, root, train):
     return dataset_cls(save_to=str(root))
 
 
-def normalize_tonic_sample(sample):
+def encode_label(label, label_to_index=None):
+    if isinstance(label, (int, np.integer)):
+        return int(label)
+    if label_to_index is not None and label in label_to_index:
+        return int(label_to_index[label])
+    try:
+        return int(label)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Cannot convert dataset label {label!r} to an integer class id.") from exc
+
+
+def normalize_tonic_sample(sample, label_to_index=None):
     if isinstance(sample, tuple) and len(sample) >= 2:
-        return sample[0], int(sample[1])
+        return sample[0], encode_label(sample[1], label_to_index)
     if isinstance(sample, dict):
         label = sample.get("target", sample.get("label"))
         events = sample.get("events", sample.get("data"))
-        return events, int(label)
+        return events, encode_label(label, label_to_index)
     raise TypeError(f"Unsupported tonic sample type: {type(sample)!r}")
 
 
+def build_label_mapping(dataset):
+    targets = getattr(dataset, "targets", None)
+    if not targets:
+        return None
+
+    mapping = {}
+    for label in sorted({target for target in targets if not isinstance(target, (int, np.integer))}, key=str):
+        mapping[label] = len(mapping)
+    return mapping or None
+
+
 class TraditionalClassificationDataset:
-    def __init__(self, base_dataset, representation, config):
+    def __init__(self, base_dataset, representation, config, label_to_index=None):
         self.base_dataset = base_dataset
         self.representation = representation
         self.config = config
+        self.label_to_index = label_to_index
 
     def __len__(self):
         return len(self.base_dataset)
 
     def __getitem__(self, idx):
-        events, label = normalize_tonic_sample(self.base_dataset[idx])
+        events, label = normalize_tonic_sample(self.base_dataset[idx], self.label_to_index)
         started = time.perf_counter()
         rep = self.representation.build(events)
         build_seconds = time.perf_counter() - started
@@ -305,6 +328,7 @@ def build_dataloaders(args, deps, representation):
     base_train = build_tonic_dataset(tonic, dataset_name, root, train=True)
     base_test = build_tonic_dataset(tonic, dataset_name, root, train=False)
     actual_split_file = None
+    label_to_index = build_label_mapping(base_train)
 
     if DATASET_DEFAULTS[dataset_name].get("official_split"):
         train_indices = sample_indices(len(base_train), args.train_limit)
@@ -322,9 +346,9 @@ def build_dataloaders(args, deps, representation):
     if args.val_limit is not None:
         val_indices = val_indices[: int(args.val_limit)]
 
-    train_dataset = TraditionalClassificationDataset(Subset(base_train, train_indices), representation, vars(args))
-    val_dataset = TraditionalClassificationDataset(Subset(base_train, val_indices), representation, vars(args))
-    test_dataset = TraditionalClassificationDataset(Subset(base_test, test_indices), representation, vars(args))
+    train_dataset = TraditionalClassificationDataset(Subset(base_train, train_indices), representation, vars(args), label_to_index)
+    val_dataset = TraditionalClassificationDataset(Subset(base_train, val_indices), representation, vars(args), label_to_index)
+    test_dataset = TraditionalClassificationDataset(Subset(base_test, test_indices), representation, vars(args), label_to_index)
 
     loader_kwargs = {
         "batch_size": args.batch_size,
@@ -342,6 +366,7 @@ def build_dataloaders(args, deps, representation):
         "test_size": len(test_dataset),
         "split_file": actual_split_file,
         "val_fraction": args.val_fraction,
+        "label_to_index": label_to_index,
     }
 
 

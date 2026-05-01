@@ -2,7 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from train_traditional_classification import RepresentationStats, load_split_file, split_train_val
+from train_traditional_classification import (
+    RepresentationStats,
+    build_label_mapping,
+    normalize_tonic_sample,
+    load_split_file,
+    split_train_val,
+)
 
 
 class TraditionalClassificationHelperTest(unittest.TestCase):
@@ -22,6 +28,17 @@ class TraditionalClassificationHelperTest(unittest.TestCase):
             train, test = load_split_file(path)
         self.assertEqual(train, [1, 2])
         self.assertEqual(test, [3, 4])
+
+    def test_normalize_tonic_sample_maps_string_label(self):
+        events, label = normalize_tonic_sample(("events", "dalmatian"), {"airplanes": 0, "dalmatian": 1})
+        self.assertEqual(events, "events")
+        self.assertEqual(label, 1)
+
+    def test_build_label_mapping_uses_sorted_class_names(self):
+        class Dataset:
+            targets = ["dalmatian", "airplanes", "dalmatian"]
+
+        self.assertEqual(build_label_mapping(Dataset()), {"airplanes": 0, "dalmatian": 1})
 
     def test_representation_stats_summary(self):
         stats = RepresentationStats()
