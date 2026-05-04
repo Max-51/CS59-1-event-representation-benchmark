@@ -1,8 +1,7 @@
 # MVSEC Optical Flow Task Review
 
-This snapshot belongs to the completed E100 early-stop artifact. Earlier
-one-epoch notes from 2026-04-26 are historical sanity checks only and are no
-longer the current formal result.
+This snapshot belongs to the completed E100 early-stop artifact and records the
+current formal optical-flow result package.
 
 ## What Is Complete
 

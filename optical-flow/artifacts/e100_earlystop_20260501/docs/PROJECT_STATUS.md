@@ -4,7 +4,7 @@ Last updated: 2026-05-02
 
 This artifact snapshot corresponds to the completed E100 early-stop MVSEC
 optical-flow run. The current main result is the 100-epoch-maximum run with
-early stopping, not the older one-epoch sanity check.
+early stopping.
 
 ## Current Main Result
 
@@ -51,5 +51,4 @@ Important limits:
 - `../logs/*.log`: training logs
 - `../logs/curves/*.csv`: local training-loss and validation-AEE curves
 
-The older one-epoch 20260426 result is historical only and should not be used as
-the current formal result.
+Use the E100 early-stop result package as the current formal result.

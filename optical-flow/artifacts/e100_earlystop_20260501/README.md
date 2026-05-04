@@ -69,5 +69,4 @@ folder level:
 - Event windows are paired to flow frames by fixed-window order/index. This is
   consistent across methods, but it is not strict timestamp interpolation.
 - `OmniEvent✳` is reported-only and should not be ranked as a local result.
-- The older one-epoch `20260426` results are historical sanity checks, not the
-  current main result.
+- Use this E100 early-stop package as the current main result.

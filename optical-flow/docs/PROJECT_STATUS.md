@@ -3,8 +3,8 @@
 Last updated: 2026-05-02
 
 This file is the current handoff note for the optical-flow part of the COMP5703
-benchmark. The older one-epoch result is kept only as history; the current main
-result is the completed 100-epoch-maximum early-stop run below.
+benchmark. The current main result is the completed 100-epoch-maximum
+early-stop run below.
 
 ## Current Main Result
 
@@ -119,12 +119,12 @@ Known path detail:
 Reruns are not needed for the current deliverable unless the group asks for a
 W&B dashboard, extra seeds, a new baseline, or timestamp-aligned pairing.
 
-## Historical Results
+## Local Archive Notes
 
-Older smoke, indoor-only, and one-epoch outdoor-train / indoor-test runs are
-useful for debugging but are not the current main result.
+Older smoke and indoor-only runs are useful for debugging but are not the
+current main result.
 
-Historical archives include:
+Local archives include:
 
 - `mvsec_smoke_results_20260425.tar.gz`
 - `mvsec_indoor_100f_2m_results_20260425.tar.gz`

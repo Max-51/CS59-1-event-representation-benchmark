@@ -1,8 +1,7 @@
 # MVSEC Optical Flow Task Review
 
-This document records the current optical-flow benchmark status. Earlier
-one-epoch notes from 2026-04-26 are historical sanity checks only and are no
-longer the current formal result.
+This document records the current optical-flow benchmark status for the
+completed E100 early-stop result package.
 
 ## What Is Complete
 
