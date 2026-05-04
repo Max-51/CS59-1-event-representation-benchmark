@@ -1,21 +1,8 @@
-# MVSEC Optical Flow E100 Early-Stop Results
+# MVSEC Optical Flow E100 Early-Stop Summary
 
-## Status
+Protocol: train on `outdoor_day1 + outdoor_day2`, evaluate on `indoor_flying1/2/3`, event window 6M, full generated GT flow frames, max 100 epochs, early-stop patience 10, block-random validation from outdoor train set.
 
-This run completed all six runnable event-representation methods under the same MVSEC optical-flow downstream benchmark.
-
-## Protocol
-
-- Train sequences: `outdoor_day1`, `outdoor_day2`.
-- Test sequences: `indoor_flying1`, `indoor_flying2`, `indoor_flying3`.
-- Event window: 6M events.
-- Flow GT: generated from all available MVSEC GT frames for the selected sequences.
-- Max epochs: 100.
-- Early stopping: patience 10, block-random validation sampled from outdoor training windows.
-- Metrics: AEE/EPE and outlier percentage. Lower is better.
-
-## Results
-
+Lower is better for AEE and outlier percentage.
 
 | Method | AEE | Outlier % | Non-outlier % | Epochs | Best epoch | Best val AEE | Train windows | Eval windows |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -36,18 +23,3 @@ This run completed all six runnable event-representation methods under the same 
 - Event windows are paired to flow frames by fixed-window order/index. This is practical and consistent across methods, but it is not strict timestamp interpolation.
 - `OmniEvent✳` is included only as reported-only context and should not be ranked as a local result from this pipeline.
 - W&B hooks exist in the code. The current deliverable uses local CSV curves and SVG figures, which are enough for reporting unless an online W&B dashboard is explicitly required.
-
-## Figures
-
-![AEE](../results/figures/mvsec_e100_earlystop_aee.svg)
-
-![Outlier](../results/figures/mvsec_e100_earlystop_outlier.svg)
-
-![Validation curves](../results/figures/mvsec_e100_earlystop_val_curve.svg)
-
-## Review Notes
-
-1. The result should be described as an adapted reproduction / unified downstream optical-flow benchmark, not a bit-for-bit reproduction of every paper's original decoder.
-2. The shared EVFlowNet-like decoder keeps the comparison fair across six methods, especially because several papers do not provide optical-flow downstream code.
-3. Event-flow pairing is fixed-window/order-based rather than strict timestamp interpolation, so this is a consistent benchmark protocol rather than the strictest MVSEC synchronization pipeline.
-4. Local CSV curves are available in `artifacts/e100_earlystop_20260501/logs/curves`. W&B support is implemented but was not used for this result package.

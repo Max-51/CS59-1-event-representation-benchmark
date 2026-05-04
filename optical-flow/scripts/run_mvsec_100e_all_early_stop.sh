@@ -2,6 +2,9 @@
 set -euo pipefail
 
 METHODS=("ergo" "est" "event_pretraining" "evrepsl" "get" "matrixlstm")
+if [[ $# -gt 0 ]]; then
+  METHODS=("$@")
+fi
 
 DATA_ROOT="${DATA_ROOT:-/root/autodl-tmp/capstone/data/mvsec}"
 OUT_DIR="${OUT_DIR:-results}"
