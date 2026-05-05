@@ -195,9 +195,17 @@ def run_training(args, model, train_loader, test_loader, device, repgen=None):
 
         if test_acc > best_acc:
             best_acc = test_acc
+            no_improve_cnt = 0
             torch.save({"epoch": epoch, "model_state_dict": model.state_dict(),
                         "best_acc": best_acc}, best_path)
             print(f"  ★ New best test_acc={best_acc:.4f}")
+        else:
+            no_improve_cnt += 1
+
+        if args.patience > 0 and no_improve_cnt >= args.patience:
+            print(f"\n⚑ Early stopping at epoch {epoch+1}.")
+            stopped_early = True
+            break
 
         torch.save({
             "epoch": epoch,
@@ -208,7 +216,7 @@ def run_training(args, model, train_loader, test_loader, device, repgen=None):
             "train_history"       : train_history,
         }, latest_path)
 
-    return best_acc, train_history
+    return best_acc, train_history, epoch + 1, stopped_early
 
 
 def main():
@@ -230,6 +238,8 @@ def main():
     parser.add_argument("--num_workers",  type=int,   default=4)
     parser.add_argument("--seed",         type=int,   default=42)
     parser.add_argument("--max_events",   type=int,   default=50000)
+    parser.add_argument("--patience",     type=int,   default=0,
+                        help="Early stopping patience. 0 = disabled.")
     parser.add_argument("--num_bins",     type=int,   default=9,
                         help="EST only: number of temporal bins")
     args = parser.parse_args()
@@ -286,7 +296,7 @@ def main():
           f"num_classes={ds_cfg['num_classes']})")
 
     # train
-    best_acc, train_history = run_training(
+    best_acc, train_history, actual_epochs, stopped_early = run_training(
         args, model, train_loader, test_loader, device, repgen
     )
 
@@ -300,6 +310,11 @@ def main():
         "lr": args.lr, "weight_decay": args.weight_decay,
         "seed": args.seed, "in_channels": in_channels,
         "num_classes": ds_cfg["num_classes"],
+        "early_stopping": {
+            "patience"   : args.patience,
+            "triggered"  : stopped_early if args.patience > 0 else False,
+            "actual_epochs": actual_epochs,
+        },
         "best_test_accuracy"    : round(best_acc, 4),
         "best_test_accuracy_pct": round(best_acc * 100, 2),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
