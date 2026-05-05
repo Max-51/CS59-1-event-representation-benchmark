@@ -272,7 +272,7 @@ def main():
     parser.add_argument("--backbone",       default="resnet18",
                         choices=["resnet18", "resnet34"])
     parser.add_argument("--epochs",       type=int,   default=100)
-    parser.add_argument("--patience",     type=int,   default=20)
+    parser.add_argument("--patience",     type=int,   default=10)
     parser.add_argument("--batch_size",   type=int,   default=16)
     parser.add_argument("--lr",           type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=1e-4)
