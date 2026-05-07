@@ -1,0 +1,11 @@
+{
+  "method": "evrepsl",
+  "dataset": "nmnist",
+  "split": "tonic_official",
+  "best_test_acc": 98.81,
+  "epochs_trained": 66,
+  "batch_size": 128,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "seed": 42
+}

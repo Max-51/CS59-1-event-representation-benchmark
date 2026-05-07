@@ -1,0 +1,13 @@
+method: evrepsl
+dataset: N-MNIST (tonic official train/test split, 60000/10000)
+backbone: ResNet18 (conv1=3x3, no maxpool)
+resolution: 34x34
+max_events: 5000
+epochs_trained: 66
+batch_size: 128
+lr: 0.001
+weight_decay: 0.0001
+seed: 42
+GPU: NVIDIA L4
+
+best_test_acc: 98.81%
