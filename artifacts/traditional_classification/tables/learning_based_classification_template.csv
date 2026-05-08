@@ -1,2 +1,8 @@
 dataset,task,method,method_label,type,best_epoch,best_val_accuracy,test_accuracy,test_loss,total_seconds,stopped_early,epochs,batch_size,device,downstream_model,split,notes
-nmnist,classification,example_learning_method,Example Learning Method,Learning-based,,,,,,,,,cuda,ResNet18,"official train/test, train split validation",Replace this row with benchmark-group results.
+nmnist,classification,ergo,Ergo,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",
+nmnist,classification,est,EST,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",
+nmnist,classification,event_pretraining,Event Pretraining,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",
+nmnist,classification,evrepsl,EvRepSL,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation","local adaptation; fallback EvRep tensor (no RepGen weights)"
+nmnist,classification,get,GET,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",local adaptation
+nmnist,classification,matrix_lstm,Matrix LSTM,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",local adaptation
+nmnist,classification,omnievent,OmniEvent,Learning-based,1,,1.0,,,false,10,32,CPU,ResNet18,"official train/test, train split validation",local adaptation
