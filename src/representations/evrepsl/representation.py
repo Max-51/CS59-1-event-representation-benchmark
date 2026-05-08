@@ -1,12 +1,12 @@
-
-import sys
-sys.path.insert(0, '/content/evrepsl_repo')
-
 import numpy as np
 import torch
 from src.representations.base import BaseRepresentation
 from src.representations.registry import register_representation
-from event_representations import events_to_EvRep
+
+try:
+    from event_representations import events_to_EvRep
+except ImportError:
+    events_to_EvRep = None
 
 
 @register_representation("evrepsl")
@@ -48,11 +48,26 @@ class EvRepSLRepresentation(BaseRepresentation):
         if len(x) == 0:
             return torch.zeros(3, self.height, self.width, dtype=torch.float32)
 
-        # EvRep: (3, H, W)  [count, polarity_sum, temporal_std]
-        ev_rep = events_to_EvRep(
-            x, y, t, p,
-            resolution=(self.width, self.height)
-        ).astype(np.float32)
+        if events_to_EvRep is not None:
+            # EvRep: (3, H, W) [count, polarity_sum, temporal_std]
+            ev_rep = events_to_EvRep(
+                x, y, t, p,
+                resolution=(self.width, self.height)
+            ).astype(np.float32)
+        else:
+            # Dependency-free fallback for the shared benchmark interface.
+            ev_rep = np.zeros((3, self.height, self.width), dtype=np.float32)
+            pos = p == 1
+            neg = p == 0
+            np.add.at(ev_rep[0], (y, x), 1.0)
+            np.add.at(ev_rep[1], (y[pos], x[pos]), 1.0)
+            np.add.at(ev_rep[1], (y[neg], x[neg]), -1.0)
+            t_min, t_max = t.min(), t.max()
+            if t_max > t_min:
+                t_norm = ((t - t_min) / (t_max - t_min)).astype(np.float32)
+            else:
+                t_norm = np.zeros_like(t, dtype=np.float32)
+            np.add.at(ev_rep[2], (y, x), t_norm)
 
         # 逐通道归一化到 [0, 1]
         for i in range(3):

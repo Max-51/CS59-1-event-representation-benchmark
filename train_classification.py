@@ -19,7 +19,7 @@ Examples:
         --evrepsl_repo /content/evrepsl_repo
 """
 
-import argparse, json, os, random, datetime, sys
+import argparse, importlib, json, os, random, datetime, sys
 import numpy as np
 import torch
 import torch.nn as nn
@@ -139,9 +139,11 @@ def run_training(args, model, train_loader, test_loader, device, repgen=None):
     scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-6)
     criterion = nn.CrossEntropyLoss()
 
-    start_epoch   = 0
-    best_acc      = 0.0
-    train_history = []
+    start_epoch     = 0
+    best_acc        = 0.0
+    no_improve_cnt  = 0
+    stopped_early   = False
+    train_history   = []
 
     if os.path.exists(latest_path):
         ckpt = torch.load(latest_path, map_location=device)
@@ -222,7 +224,10 @@ def run_training(args, model, train_loader, test_loader, device, repgen=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--method",         required=True,
-                        choices=["est","ergo","evrepsl","event_pretraining","matrix_lstm"])
+                        choices=[
+                            "est", "ergo", "evrepsl", "event_pretraining",
+                            "matrix_lstm", "get", "omnievent",
+                        ])
     parser.add_argument("--dataset",        default="ncaltech101",
                         choices=["ncaltech101","nmnist"])
     parser.add_argument("--data_root",      required=True)
@@ -252,6 +257,16 @@ def main():
     ds_cfg = DATASET_DEFAULTS[args.dataset]
 
     # representation
+    representation_modules = {
+        "est": "src.representations.est.representation",
+        "ergo": "src.representations.ergo.representation",
+        "evrepsl": "src.representations.evrepsl.representation",
+        "event_pretraining": "src.representations.event_pretraining.representation",
+        "matrix_lstm": "src.representations.matrix_lstm.representation",
+        "get": "src.representations.get.representation",
+        "omnievent": "src.representations.omnievent.representation",
+    }
+    importlib.import_module(representation_modules[args.method])
     from src.representations.registry import get_representation
     rep_cfg = {"height": ds_cfg["height"], "width": ds_cfg["width"],
                "max_events": args.max_events}
