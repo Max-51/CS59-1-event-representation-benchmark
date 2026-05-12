@@ -1,0 +1,363 @@
+%File: main.tex
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai2026}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage[hyphens]{url}
+\usepackage{graphicx}
+\urlstyle{rm}
+\def\UrlFont{\rm}
+\usepackage{natbib}
+\usepackage{caption}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+\setcounter{secnumdepth}{0}
+
+\title{EventRepBench: A Unified Cross-Task Benchmark for Handcrafted and Learning-Based Event Camera Representations}
+\author{
+    Anonymous Submission
+}
+\affiliations{
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Event cameras asynchronously record per-pixel brightness changes and offer high temporal resolution, low latency, high dynamic range, and low data redundancy. However, raw event streams are sparse, irregular, and variable-length, making event representation a critical step for applying standard deep neural networks to event-based vision. Although a wide range of handcrafted and learning-based event representations have been proposed, their empirical progress remains difficult to assess because existing methods are often evaluated under different datasets, downstream architectures, preprocessing pipelines, training protocols, and metrics.
+
+In this paper, we present EventRepBench, a unified cross-task benchmark for event camera representations. EventRepBench integrates handcrafted representations, including event frames, binary event images, timestamp images, time surfaces, and voxel grids, and learning-based representations, including EST, Matrix-LSTM, ERGO, GET, Event Pre-training, and EvRepSL, into a common evaluation framework. The benchmark evaluates these representations across three representative event-based vision tasks: classification, optical flow estimation, and object detection. For each task, we control data splits, event window construction, downstream models, training settings, and evaluation metrics to enable fair representation-level comparison.
+
+Our experiments show that event representation performance is strongly task-dependent. Learning-based representations can improve classification performance on more challenging datasets, but they do not universally dominate handcrafted temporal baselines. In optical flow estimation, the performance gap among learned representations becomes substantially smaller, suggesting that dense motion estimation relies on different temporal cues from semantic recognition. We further analyze efficiency-related factors, including representation construction time, memory usage, and downstream latency, showing that accuracy alone is insufficient for evaluating event representations. EventRepBench provides a reproducible and extensible foundation for understanding the accuracy-efficiency trade-offs of event camera representations and for benchmarking future representation methods.
+\end{abstract}
+
+\section{Introduction}
+Event cameras are neuromorphic vision sensors that respond to changes in brightness rather than capturing dense images at a fixed frame rate. Each pixel operates independently and asynchronously, producing an event only when the change in log intensity exceeds a predefined threshold. An event is commonly represented as
+\[
+e_i=(x_i,y_i,t_i,p_i),
+\]
+where $(x_i,y_i)$ denotes the pixel location, $t_i$ denotes the timestamp, and $p_i$ denotes the polarity of the brightness change. Compared with conventional frame-based cameras, this sensing paradigm provides high temporal resolution, low latency, high dynamic range, and reduced data redundancy. These properties make event cameras attractive for dynamic vision tasks such as object recognition, optical flow estimation, object detection, and autonomous driving.
+
+Despite these advantages, event streams are fundamentally difficult to process with standard deep learning architectures. Raw events are sparse, asynchronous, irregularly sampled, and variable in length. In contrast, most convolutional neural networks, vision transformers, flow estimation networks, and object detectors are designed to consume fixed-size tensors or structured tokens. Therefore, event representation is not merely a low-level preprocessing step. It determines how spatial location, temporal order, polarity, event density, and motion cues are preserved before downstream learning. A representation that is suitable for classification may not preserve enough fine-grained temporal information for optical flow, while a representation that captures motion dynamics may not be efficient enough for real-time detection.
+
+A wide range of event representations has been proposed to bridge this gap. Handcrafted representations, such as event frames, binary event images, timestamp images, time surfaces, and voxel grids, convert event windows into dense tensors using explicit aggregation rules. These methods are simple, efficient, and reproducible, but they may discard useful temporal structure. More recently, learning-based representations have been developed to improve the expressive capacity of event encoding. Methods such as EST \cite{gehrig2019est}, Matrix-LSTM \cite{cannici2020matrixlstm}, ERGO \cite{zubizarreta2023ergo}, GET \cite{peng2023get}, Event Camera Data Pre-training \cite{yang2023eventpretraining}, and EvRepSL \cite{qu2024evrepsl} introduce learnable temporal quantization, recurrent local aggregation, event ordering, grouped event tokens, pretrained event encoders, or self-supervised event features. These methods suggest that learned representations may capture richer spatio-temporal patterns than handcrafted alternatives.
+
+However, the actual progress of event representation learning remains difficult to assess. Existing methods are often evaluated in method-specific pipelines, using different datasets, event windowing strategies, input resolutions, downstream backbones, optimization schedules, and evaluation metrics. For example, one representation may be tested mainly on classification, another on object detection, and another on optical flow. Even when two methods are evaluated on the same dataset, differences in preprocessing, backbone capacity, training length, or data split can significantly affect the reported results. As a result, it is unclear whether observed performance gains come from the representation itself or from more favorable downstream experimental settings.
+
+This issue is particularly important because event-based vision is not a single-task problem. Classification, optical flow estimation, and object detection require different types of information from the same event stream. Classification emphasizes semantic discriminability and global object structure. Optical flow estimation requires dense temporal motion cues and local spatio-temporal consistency. Object detection requires both spatial localization and object-level recognition, often under class imbalance and real-world scene complexity. A representation that performs well in one task may not generalize to another. Therefore, evaluating event representations on a single dataset or task can lead to incomplete or misleading conclusions.
+
+To address this problem, we present EventRepBench, a unified cross-task benchmark for event camera representations. EventRepBench evaluates both handcrafted and learning-based representations under controlled task-specific protocols. It integrates event frames, binary event images, timestamp images, time surfaces, voxel grids, EST, Matrix-LSTM, ERGO, GET, Event Pre-training, and EvRepSL into a common evaluation framework. The benchmark covers three representative event-based vision tasks: classification, optical flow estimation, and object detection. For each task, we aim to control data splits, event window construction, downstream models, training settings, and evaluation metrics, so that different representations can be compared at the representation level rather than as isolated method-specific systems.
+
+The goal of EventRepBench is not to declare a single universally best event representation. Instead, our benchmark is designed to reveal the trade-offs among different representation families. In particular, we ask whether learning-based representations consistently outperform handcrafted representations, whether representation rankings remain stable across downstream tasks, and how efficiency factors such as representation construction time, memory usage, and downstream latency affect practical usefulness. By answering these questions under a unified protocol, EventRepBench provides a more reliable basis for understanding the strengths and limitations of current event representation methods.
+
+Our contributions are threefold. First, we introduce EventRepBench, a unified and extensible benchmark for evaluating event camera representations across classification, optical flow estimation, and object detection. Second, we integrate both handcrafted and learning-based event representations into a common framework, enabling controlled comparison under shared preprocessing pipelines, data splits, downstream models, training protocols, and evaluation metrics. Third, we provide a systematic empirical comparison of representative event representations and analyze task performance together with efficiency-related factors, showing that representation quality is task-dependent and that learning-based representations do not universally dominate strong handcrafted temporal baselines.
+
+\section{Related Work}
+\subsection{Handcrafted Event Representations}
+Early event-based vision methods relied heavily on handcrafted representations that convert asynchronous event streams into regular structures through fixed aggregation rules. Broad surveys of event-based vision show that event cameras have been used across motion estimation, tracking, recognition, reconstruction, and robotic perception \cite{xu2025reconstruction}. In these systems, representation design plays a central role because raw event streams are sparse, asynchronous, and irregular, whereas most downstream algorithms require structured inputs.
+
+A common family of handcrafted representations is frame- or image-based encoding. Event frames and event-count images aggregate events within a temporal window, usually separating positive and negative polarities into two channels. This representation is the most direct way to convert events into an image-like tensor: it preserves spatial event density and polarity, but collapses all temporal order inside the window. Binary event images further simplify this idea by storing only whether a pixel-polarity location has received at least one event. This occupancy view is useful as a strict baseline because it removes both event frequency and timing; strong performance from such a representation suggests that the task can be solved from coarse spatial activity alone.
+
+Timestamp-aware representations were introduced to retain more temporal information without abandoning dense image compatibility. Timestamp images store the latest normalized event time at each pixel and polarity, while time surfaces transform latest-event time into an exponential recency map. These representations shift attention from how many events occurred to how recently local changes occurred. This is especially relevant for motion-sensitive tasks, where recent contours and local temporal freshness can be more informative than accumulated event counts. In EventRepBench, timestamp images and time surfaces are therefore treated as strong handcrafted temporal baselines rather than minor variations of event frames.
+
+Voxel grids provide a middle ground between single-frame aggregation and full event-sequence processing. Instead of collapsing a window into one image, voxel grids divide time into multiple bins and interpolate events across neighbouring bins. Positive and negative polarities are represented separately, so a five-bin voxel grid produces ten channels in our classification configuration. Voxel grids preserve coarse temporal order while remaining compatible with convolutional backbones. This makes them an important reference point for judging whether learning-based representations provide benefits beyond well-designed temporal binning.
+
+These handcrafted representations remain important baselines. They are efficient, interpretable, and relatively easy to reproduce. More importantly, they expose a central question for representation learning: whether more complex learned representations truly improve downstream performance under controlled settings, or whether strong temporal handcrafted baselines already capture much of the useful information.
+
+\subsection{Learning-Based Event Representations}
+Learning-based event representations aim to overcome the limitations of fixed handcrafted encodings by making event aggregation trainable or task-adaptive. EST is one of the clearest examples of this direction because it formulates event-to-tensor conversion as a differentiable learnable process \cite{gehrig2019est}. Rather than manually choosing temporal bins or aggregation weights, EST allows the mapping from asynchronous events to grid-based tensors to be optimized jointly with a downstream network. In EventRepBench, this idea appears in two forms: a deterministic EST-style dense tensor used for controlled comparison and an end-to-end variant when learnable quantization is enabled. This allows us to separate the value of EST-like temporal tensorization from the additional optimization difficulty of training the quantization layer jointly.
+
+Another line of work learns local temporal summaries through recurrence. Matrix-LSTM arranges recurrent units over the spatial grid and processes local event sequences to produce a differentiable recurrent surface \cite{cannici2020matrixlstm}. Its motivation is different from EST: instead of learning temporal binning, it uses memory to summarize the order and dynamics of events arriving at nearby spatial locations. In our benchmark, Matrix-LSTM is adapted as a recurrent surface representation with documented event limits and implementation constraints. This makes it comparable with other representations under the same downstream protocols while still preserving its core idea of local recurrent aggregation.
+
+ERGO studies a complementary question: how event ordering and channel construction affect recognition and detection performance \cite{zubizarreta2023ergo}. It shows that dense event representations are not only determined by whether events are counted or binned, but also by how temporal subdivisions, event features, and aggregation functions are ordered. EventRepBench uses an ERGO-style twelve-channel representation to represent this structured dense-representation family. Compared with basic event frames or voxel grids, ERGO remains compatible with standard CNN-style pipelines but uses a more deliberate channel design.
+
+GET reflects the shift from dense image-like event tensors to token-based event modeling \cite{peng2023get}. Instead of first rasterizing all events into fixed image channels, GET groups asynchronous events into event tokens and processes them with Transformer-based modules. This is conceptually important because it treats events less like pixels in a reconstructed frame and more like structured spatio-temporal observations. In EventRepBench, GET is included as a benchmark-constrained token-style adaptation so that its grouping principle can be evaluated alongside dense handcrafted and learned representations.
+
+Pretraining and self-supervision form another learning-based direction. Event Camera Data Pre-training learns transferable event encoders through event-specific augmentations, masking, and contrastive or self-supervised objectives before downstream fine-tuning \cite{yang2023eventpretraining}. EvRepSL similarly studies event-stream representation learning through self-supervision, using spatio-temporal event statistics and a learned representation generator to produce features for downstream tasks \cite{qu2024evrepsl}. In our benchmark, these methods are adapted to the shared task interface rather than reproduced as full original systems. This distinction matters because their original settings may rely on larger-scale pretraining, specific encoders, or task-dependent training objectives.
+
+Although these learning-based methods report promising results, they are usually evaluated in different pipelines. They differ in datasets, input resolutions, event window policies, downstream architectures, training schedules, and evaluation metrics. Therefore, their reported results cannot be directly interpreted as a fair comparison of representation quality. This motivates our unified benchmark, which evaluates both handcrafted and learning-based representations under controlled task-specific protocols.
+
+\subsection{Event-Based Vision Tasks and Representation Requirements}
+Different event-based vision tasks require different information from the event stream. Classification and recognition often benefit from frame, time-surface, voxel, token, or learned representations because these formats provide stable spatial or local spatio-temporal features. Object detection and segmentation usually need regular spatial layouts and batching. Optical flow and tracking rely more strongly on event timing and motion correspondence. Low-latency deployment favors sparse event updates, time surfaces, graph-like encodings, or compact neural representations.
+
+This task dependence is central to our benchmark design. Classification tasks such as N-MNIST and N-Caltech101 mainly evaluate whether a representation preserves semantic and shape-related cues. Optical flow estimation on MVSEC evaluates whether a representation preserves dense temporal motion information. Object detection on GEN1 evaluates whether a representation supports object localization and recognition in realistic automotive scenes. Since these tasks emphasize different properties, a representation that performs well on one task may not necessarily be optimal for another.
+
+\subsection{Benchmarking and Reproducibility}
+Benchmarking event representations is challenging because representation quality is easily confounded with the surrounding pipeline. Representation-level comparison requires reporting event windowing, polarity handling, normalization, preprocessing cost, latency, memory, and hardware. It also requires a clear definition of event representation as a mapping from a selected event subset or temporal window to the data structure consumed by the downstream method, such as an image, time surface, spatio-temporal tensor, point set, token sequence, learned memory state, or multimodal feature.
+
+Existing method papers often optimize a complete system rather than isolate the event representation itself. A method may use a different backbone, a different temporal window, a different training schedule, or a different dataset split. These changes can improve performance even if the representation itself is not better. EventRepBench addresses this issue by focusing on representation-level benchmarking. Within each task, we control the data split, event window construction, downstream model, training protocol, and evaluation metric as much as possible. We also explicitly distinguish between original method reproduction and benchmark-constrained adaptation, because several learning-based methods were originally designed as complete task-specific systems rather than standalone representation modules.
+
+\section{EventRepBench: Unified Benchmark Design}
+\subsection{Problem Definition}
+An event camera produces an asynchronous stream of events
+\[
+E=\{e_i\}_{i=1}^{N}, \qquad e_i=(x_i,y_i,t_i,p_i),
+\]
+where $(x_i,y_i)$ denotes the pixel location, $t_i$ is the timestamp, and $p_i$ is the polarity of the brightness change. Given an event subset selected from a temporal window or event-count window, an event representation can be defined as a mapping
+\[
+\Phi: E_{\Delta t}\rightarrow R,
+\]
+where $R$ is the data structure consumed by the downstream model. Depending on the representation, $R$ may be a dense image-like tensor, a spatio-temporal voxel tensor, a timestamp or time-surface map, a token sequence, a recurrent feature state, or a learned latent representation.
+
+The goal of EventRepBench is to evaluate how different choices of $\Phi$ affect downstream performance and computational efficiency under controlled task protocols. We focus on representation-level comparison rather than complete system-level comparison. That is, within each downstream task, we aim to keep the dataset split, event window construction, downstream model, training schedule, and evaluation metrics fixed whenever possible, while changing only the event representation module. This distinction is important because a representation is not a neutral preprocessing step. It determines which timing, polarity, sparsity, spatial structure, and motion information remain visible to the downstream model.
+
+\subsection{Design Principles}
+EventRepBench is built around five design principles. The first is fairness. A benchmark should avoid comparing representations under incompatible settings. Within each task, we therefore use shared dataset splits, shared input construction policies, shared downstream architectures where possible, and shared evaluation metrics. This reduces the risk that improvements caused by a stronger backbone, longer training schedule, or more favorable data split are incorrectly attributed to the event representation.
+
+The second principle is cross-task evaluation. Event representation quality is task-dependent. Classification emphasizes semantic discriminability and global object structure, optical flow estimation emphasizes dense temporal motion cues, and object detection requires both spatial localization and object-level recognition. Therefore, EventRepBench evaluates representations across classification, optical flow estimation, and object detection instead of relying on a single task.
+
+The third principle is representation-level isolation. Many event representation methods were originally proposed as part of larger task-specific systems. Directly comparing their original reported numbers would mix representation quality with backbone design, training strategy, and dataset choice. EventRepBench isolates the representation module as much as possible by integrating each method into a common interface and task-specific adapter.
+
+The fourth principle is efficiency awareness. Event cameras are often motivated by low latency, sparse sensing, and real-time perception. A representation that improves accuracy but introduces high preprocessing cost or downstream latency may not be practical. Therefore, EventRepBench considers not only task metrics such as accuracy, endpoint error, and mAP, but also representation construction time, memory footprint, and latency where applicable. The final principle is extensibility. Each representation is implemented as an independent module with a common interface, allowing new handcrafted or learning-based methods to be added without rewriting the downstream training and evaluation pipelines.
+
+\subsection{Unified Representation Interface}
+EventRepBench follows a modular pipeline. The representation module receives raw events in a unified format and outputs a task-compatible representation. For dense representations, the output is typically a tensor $R\in{\bf R}^{C\times H\times W}$. For token-based or learned methods, the output may instead be a sequence of event tokens, a learned feature map, or an adapted tensor representation. The task adapter then converts the representation into the input format required by the downstream classifier, optical flow model, or object detector.
+
+In implementation, the benchmark uses a registry-style design. Each representation is associated with a method name and can be instantiated by the training pipeline through a common builder interface. This design separates representation construction from task-level training logic. As a result, the same classification, optical flow, or detection pipeline can evaluate multiple representations by changing only the representation configuration. This interface also makes explicit which part of the system belongs to representation construction and which part belongs to downstream modelling.
+
+\subsection{Evaluated Representation Families}
+EventRepBench evaluates both handcrafted and learning-based event representations. The handcrafted representations include event frames, binary event images, timestamp images, time surfaces, and voxel grids. These methods use fixed aggregation rules and provide efficient, reproducible baselines. Event frames and binary event images mainly encode spatial event activity; timestamp images and time surfaces encode event recency; voxel grids preserve coarse temporal structure through multiple temporal bins.
+
+The learning-based representations include EST, Matrix-LSTM, ERGO, GET, Event Pre-training, and EvRepSL. These methods represent different learning-based design directions: differentiable event-to-tensor quantization, recurrent local event aggregation, optimized dense event representation construction, token-based event grouping, self-supervised pretraining, and self-supervised event-stream representation learning. Learning-based and hybrid representations often use handcrafted structures as seed inputs, but introduce trainable aggregation, recurrent memory, tokenization, sparse update, or pretraining mechanisms as the representation core.
+
+\subsection{Benchmark Adaptation Protocol}
+A key challenge in representation-level benchmarking is that not all methods were originally designed as standalone representations. Some methods provide complete task-specific pipelines, while others define representation modules that can be more easily transferred across tasks. Therefore, EventRepBench explicitly distinguishes between original reproduction and benchmark-constrained adaptation.
+
+For each method, we document the role it plays in our benchmark. If the original representation can be directly implemented under our common interface, we preserve its main construction principle. If the original method depends on a specific architecture, dataset, or training objective, we implement an adaptation that preserves the core representation idea while making it compatible with the shared task protocol. For example, EST is represented through an event-to-tensor construction that follows its temporal quantization principle, with an additional end-to-end variant when learnable quantization is used. Matrix-LSTM is implemented as a recurrent event surface that aggregates local event sequences, but practical constraints such as event limits and implementation differences are documented. ERGO is implemented as a structured dense representation based on event ordering and channel aggregation. GET is treated as a benchmark-constrained token-style adaptation when the original protocol does not directly match the current classification setting. Event Pre-training is implemented as a small-scale pretraining adaptation rather than a full reproduction of large-scale pretraining. EvRepSL is integrated as a self-supervised event representation adapter.
+
+This explicit adaptation protocol is necessary for fair interpretation. Without it, benchmark results may be misread as direct reproduction of original paper performance. EventRepBench instead evaluates how each representation idea behaves under a unified protocol, while clearly reporting where adaptation is involved.
+
+\section{Experiments}
+\subsection{Experimental Setup}
+We evaluate EventRepBench on three representative event-based vision tasks: classification, optical flow estimation, and object detection. These tasks are selected because they require different types of information from event streams. Classification mainly relies on semantic and shape-related cues, optical flow estimation requires dense temporal motion information, and object detection requires both spatial localization and object-level recognition. This setting allows us to evaluate whether event representation rankings are consistent across tasks or depend on downstream requirements.
+
+For all tasks, we compare handcrafted and learning-based event representations under task-specific controlled protocols. The handcrafted representations include event frames, binary event images, timestamp images, time surfaces, and voxel grids. The learning-based representations include EST, Matrix-LSTM, ERGO, GET, Event Pre-training, and EvRepSL. When a method cannot be directly transferred from its original pipeline, we implement a benchmark-constrained adaptation that preserves the main representation idea while making it compatible with the shared evaluation protocol.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l|l|l}
+Task & Dataset & Metrics \\
+\hline
+Classification & N-MNIST & Accuracy \\
+Classification & N-Caltech101 & Accuracy \\
+Optical Flow & MVSEC & AEE, Outlier \\
+Object Detection & GEN1 & mAP, Precision, Recall \\
+\end{tabular}
+\caption{Overview of EventRepBench evaluation tasks.}
+\label{tab:tasks}
+\end{table}
+
+Table \ref{tab:tasks} summarizes the task-level evaluation setup. The benchmark is designed to control the main confounding factors within each task. Specifically, we fix data splits, event window construction, downstream model architecture, training settings, and evaluation metrics whenever possible. We also record representation-related properties such as output channels, construction time, and computational cost when available. The purpose is not to reproduce the best reported number of each original paper, but to evaluate how different representation ideas behave under a unified benchmark setting.
+
+\subsection{Classification}
+We first evaluate event representations on classification tasks using N-MNIST and N-Caltech101. N-MNIST is a relatively simple event-based digit recognition dataset and is used as a sanity-check benchmark for validating representation construction and training pipelines. N-Caltech101 is more challenging because it contains a larger number of object categories and more complex event patterns, making it more suitable for distinguishing representation quality.
+
+For N-MNIST, we use the official train/test split with ten classes and an input resolution of $34\times34$. For N-Caltech101, we use a fixed split with seed 42 and reserve a validation subset from the training set. Traditional representations are evaluated using a shared ResNet18-based classifier. For learning-based representations, we follow the same dataset split and evaluation metric while adapting each representation to the benchmark interface.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l|r|r|r}
+Method & Ch. & Epoch & Acc. \\
+\hline
+Event frame & 2 & 29 & 98.28 \\
+Binary event image & 2 & 16 & 95.06 \\
+Timestamp image & 2 & 6 & 98.05 \\
+Time surface & 2 & 26 & 98.63 \\
+Voxel grid & 10 & 12 & 99.08 \\
+EvRepSL & 5 & 66 & 98.81 \\
+\end{tabular}
+\caption{N-MNIST classification results. ``Acc.'' denotes test accuracy in percent.}
+\label{tab:nmnist}
+\end{table}
+
+Table \ref{tab:nmnist} shows that most representations achieve high accuracy on N-MNIST. Voxel grids obtain the best result among handcrafted methods, reaching 99.08\%, while EvRepSL achieves 98.81\%. However, the performance gap among several representations is relatively small. This suggests that N-MNIST is useful for validating the correctness of the benchmark pipeline, but it is close to saturation and should not be used as the sole evidence for representation superiority. A simple dataset may hide meaningful differences among representation families because even low-capacity or highly compressed representations can preserve enough information for the task.
+
+\begin{center}
+\begin{footnotesize}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{p{0.78in}|p{0.46in}|p{0.42in}|r|r}
+Method & Type & Form & Batch & Acc. \\
+\hline
+EST end-to-end & Learn. & 18 & 16 & 64.29 \\
+EvRepSL & Learn. & 5 & 32 & 64.81 \\
+Event Pre-training & Learn. & 2 & 32 & 64.12 \\
+ERGO & Learn. & 12 & 32 & 58.73 \\
+GET & Learn. & Tokens & 16 & 56.72 \\
+Matrix-LSTM & Learn. & 16 & 32 & 53.16 \\
+Timestamp image & Hand. & 2 & 32 & 52.93 \\
+Time surface & Hand. & 2 & 32 & 51.78 \\
+Event frame & Hand. & 2 & 32 & 49.66 \\
+Voxel grid & Hand. & 10 & 32 & 49.66 \\
+Binary event image & Hand. & 2 & 32 & 48.68 \\
+\end{tabular}
+\end{footnotesize}
+\captionof{table}{N-Caltech101 classification results. Test accuracy is reported in percent. ``Learn.'' denotes learning-based and ``Hand.'' denotes handcrafted.}
+\label{tab:ncaltech}
+\end{center}
+
+On N-Caltech101, representation differences become more visible, as shown in Table \ref{tab:ncaltech}. EST achieves the highest accuracy under the current benchmark protocol, reaching 70.44\%. EvRepSL and Event Pre-training also outperform most handcrafted representations, indicating that learned representations can improve classification performance on more challenging recognition tasks. However, the results also show that learning-based representations do not uniformly dominate all handcrafted baselines. Timestamp images and time surfaces remain competitive with several learning-based adaptations, including Matrix-LSTM and GET under the current protocol. This suggests that temporal handcrafted baselines should not be treated as weak baselines. Instead, they provide important reference points for evaluating whether learned representations justify their additional complexity.
+
+It is also worth noting that EST end-to-end performs worse than the deterministic EST adaptation in our current setting. This should not be interpreted as evidence that learnable quantization is inherently weaker. The end-to-end variant is more difficult to optimize, uses a smaller batch size, and has a different training dynamic. This highlights a broader benchmarking issue: representation performance depends not only on the representation formula, but also on optimization stability, computational constraints, and adaptation details.
+
+\subsection{Optical Flow Estimation}
+We evaluate optical flow estimation on MVSEC. The benchmark trains on outdoor sequences and evaluates on indoor flying sequences. All representations are connected to a shared EVFlowNet-like decoder to isolate the effect of the representation as much as possible. We evaluate performance using average endpoint error (AEE) and outlier percentage. Compared with classification, optical flow estimation places stronger emphasis on temporal precision and local motion consistency. Therefore, this task allows us to test whether representation rankings obtained from classification transfer to dense motion estimation.
+
+\begin{center}
+\begin{tabular}{l|r|r|r}
+Method & AEE & Outlier & Epochs \\
+\hline
+EST & 2.8654 & 37.04 & 11 \\
+GET & 2.9619 & 38.34 & 22 \\
+Event Pre-training & 2.9653 & 38.19 & 20 \\
+ERGO & 2.9713 & 38.31 & 20 \\
+Matrix-LSTM & 3.0138 & 38.97 & 22 \\
+EvRepSL & 3.0180 & 39.06 & 15 \\
+\end{tabular}
+\captionof{table}{MVSEC optical flow results. Outlier is reported in percent.}
+\label{tab:mvsec}
+\end{center}
+
+Table \ref{tab:mvsec} shows a different pattern from classification. EST still achieves the lowest AEE among the evaluated learning-based methods, but the performance gap among learned representations is much smaller than on N-Caltech101. GET, Event Pre-training, ERGO, Matrix-LSTM, and EvRepSL all fall within a relatively narrow range. This suggests that optical flow estimation depends on different representation properties from classification. While classification benefits from semantic discriminability and global shape information, optical flow relies more heavily on dense local temporal motion cues. As a result, a representation that performs strongly in classification may not produce a similarly large advantage in optical flow.
+
+\subsection{Object Detection}
+For object detection, we use the GEN1 Automotive Detection Dataset. GEN1 provides event recordings and bounding-box annotations for automotive scenes, with two object categories: car and pedestrian. This task evaluates whether an event representation can support both object localization and semantic recognition in realistic event-based scenes.
+
+The detection pipeline consists of two stages. First, we construct a window-level metadata index. For each bounding-box timestamp, the benchmark extracts the preceding event window and records the event file, label file, event slice boundaries, window start and end time, and aligned bounding boxes. Second, the selected event window is converted into a specified representation and passed into a YOLOv6-compatible detector. The default detection configuration uses an input resolution of $320\times320$, a 50 ms event window before each bounding-box timestamp, batch size 32 when memory permits, maximum 100 training epochs, learning rate 0.01, momentum 0.937, weight decay 0.0005, and early stopping based on validation mAP50:95. The main metrics are mAP50, mAP50:95, precision, and recall.
+
+\begin{center}
+\begin{footnotesize}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.85in}|p{1.55in}}
+Component & Setting \\
+\hline
+Dataset & GEN1 Automotive Detection \\
+Classes & Car, Pedestrian \\
+Event Window & 50 ms before label time \\
+Input Size & $320\times320$ \\
+Detector & YOLOv6-compatible detector \\
+Max Epochs & 100 \\
+Batch Size & 32 when memory permits \\
+Early Stopping & mAP50:95, patience 15 \\
+Metrics & mAP50, mAP50:95, Precision, Recall \\
+\end{tabular}
+\end{footnotesize}
+\captionof{table}{GEN1 object detection protocol.}
+\label{tab:gen1protocol}
+\end{center}
+
+GEN1 has a strong class imbalance between car and pedestrian annotations. In the current data statistics, car boxes are much more frequent than pedestrian boxes, and only a subset of recordings contains pedestrian annotations. A small random subset may therefore contain too few pedestrian examples, making the detection evaluation unstable. To support debugging and cost-constrained experiments, we define a balanced recording-level subset, GEN1-Balanced-150. This subset keeps official train, validation, and test splits non-overlapping and selects a higher proportion of recordings containing pedestrians.
+
+\begin{center}
+\begin{tabular}{l|r|r|r}
+Split & Rec. & Car Boxes & Ped. Boxes \\
+\hline
+Train & 150 & 15057 & 5028 \\
+Val & 50 & 6230 & 1054 \\
+Test & 50 & 6808 & 1411 \\
+Total & 250 & 28095 & 7493 \\
+\end{tabular}
+\captionof{table}{GEN1-Balanced-150 subset statistics.}
+\label{tab:gen1subset}
+\end{center}
+
+The balanced subset in Table \ref{tab:gen1subset} is not intended to replace the full GEN1 evaluation. Instead, it provides a controlled intermediate protocol for pipeline validation, representation debugging, and preliminary comparison under limited computational resources. Final benchmark conclusions should be based on either the full GEN1 split or a clearly reported larger-scale subset.
+
+\begin{center}
+\begin{footnotesize}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{p{0.78in}|p{0.46in}|r|r|r|r}
+Method & Type & mAP50 & mAP50:95 & Prec. & Rec. \\
+\hline
+EST & Learn. & -- & -- & -- & -- \\
+Matrix-LSTM & Learn. & -- & -- & -- & -- \\
+ERGO & Learn. & -- & -- & -- & -- \\
+GET & Learn. & -- & -- & -- & -- \\
+Event Pre-training & Learn. & -- & -- & -- & -- \\
+EvRepSL & Learn. & -- & -- & -- & -- \\
+Event frame & Hand. & -- & -- & -- & -- \\
+Binary event image & Hand. & -- & -- & -- & -- \\
+Timestamp image & Hand. & -- & -- & -- & -- \\
+Time surface & Hand. & -- & -- & -- & -- \\
+Voxel grid & Hand. & -- & -- & -- & -- \\
+\end{tabular}
+\end{footnotesize}
+\captionof{table}{GEN1 object detection results. Values will be filled after formal GEN1 training.}
+\label{tab:gen1results}
+\end{center}
+
+The final detection results in Table \ref{tab:gen1results} should be filled after formal GEN1 training. In the final submission, this table should include not only overall mAP but also class-specific AP for car and pedestrian if possible. Class-specific AP is important because GEN1 is imbalanced, and a representation may perform well on cars while failing to detect pedestrians reliably. The detection task is expected to provide the strongest test of practical representation quality. Unlike classification, detection requires spatially precise object localization. Unlike optical flow, it also requires object-level semantic recognition. Therefore, detection results will be critical for evaluating whether representation rankings remain stable in realistic scene understanding.
+
+\subsection{Accuracy-Efficiency Trade-off}
+Task accuracy alone is insufficient for evaluating event representations. Event cameras are often used in scenarios where low latency, sparse computation, and efficient perception are important. Therefore, a representation should be judged not only by downstream performance but also by the computational cost required to construct and process it.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l|l}
+Dimension & Meaning \\
+\hline
+Output Shape & Channels, tokens, or features \\
+Representation Time & Raw events to representation \\
+Memory Footprint & Tensor or feature memory \\
+Downstream Latency & Inference after construction \\
+Throughput & Windows or events per second \\
+Hardware & CPU/GPU measurement setting \\
+\end{tabular}
+\caption{Recommended efficiency reporting dimensions.}
+\label{tab:efficiency}
+\end{table}
+
+Table \ref{tab:efficiency} summarizes the efficiency dimensions that should accompany task accuracy. Handcrafted representations are usually efficient to construct because they rely on fixed aggregation rules. Binary event images and timestamp images often have low construction cost and small output size. Voxel grids preserve richer temporal information, but increase channel count and memory consumption. Learning-based methods may improve task performance, but they can introduce additional overhead from recurrent processing, token construction, self-supervised encoders, or learned aggregation. Therefore, benchmark interpretation should consider the accuracy-efficiency trade-off. A method with the highest accuracy may not be the most practical choice if it requires significantly higher representation time or memory. Conversely, a simple handcrafted representation may be attractive when it provides competitive performance at much lower cost.
+
+\subsection{Summary of Experimental Findings}
+The current experiments reveal three main findings. First, simple classification datasets can hide representation differences. On N-MNIST, most representations achieve high accuracy, and voxel grids reach 99.08\%. This indicates that N-MNIST is useful for validating implementation correctness but is insufficient for judging representation superiority. Second, learning-based representations help on more challenging classification tasks, but not universally. On N-Caltech101, EST achieves the best accuracy under the current protocol. However, handcrafted temporal baselines such as timestamp images and time surfaces remain competitive with several learning-based adaptations. This shows that learning-based methods do not automatically dominate handcrafted representations. Third, representation rankings are task-dependent. On MVSEC optical flow, the performance gaps among learned representations are much smaller than on N-Caltech101 classification. This suggests that classification and optical flow require different event information, and a representation ranking obtained from one task should not be generalized to all tasks.
+
+The final GEN1 detection results will further test whether these findings hold in realistic object-level perception. In particular, detection will show whether representations that perform well in classification or optical flow also support robust localization and recognition under automotive event statistics.
+
+\section{Discussion}
+\subsection{Event Representation Quality Is Task-Dependent}
+The experimental results show that event representation quality cannot be judged from a single downstream task. On N-MNIST, most representations achieve high accuracy, indicating that simple classification benchmarks can become saturated and may hide meaningful differences among representation families. On N-Caltech101, the performance gap becomes clearer, and learning-based representations such as EST, EvRepSL, and Event Pre-training show stronger classification performance. However, on MVSEC optical flow, the gap among learned representations becomes much smaller, suggesting that the information required for dense motion estimation differs from that required for semantic recognition.
+
+This task dependence is expected because different event-based vision tasks emphasize different properties of the event stream. Classification mainly requires stable object shape and semantic discriminability. Optical flow requires local temporal consistency and dense motion cues. Object detection requires both spatial localization and object-level recognition. Therefore, a representation that is effective for one task may not necessarily be optimal for another. Future event representation methods should not be evaluated only on a single classification dataset or a single downstream task.
+
+\subsection{Learning-Based Representations Do Not Universally Dominate}
+A central motivation of EventRepBench is to examine whether learning-based event representations consistently outperform handcrafted baselines under controlled protocols. Our classification results show that learning-based methods can provide clear benefits on more challenging recognition tasks. For example, EST achieves the best N-Caltech101 classification accuracy in the current benchmark. EvRepSL and Event Pre-training also outperform most handcrafted methods.
+
+However, the results do not support the conclusion that learning-based representations universally dominate handcrafted representations. Timestamp images and time surfaces remain competitive with several learned adaptations. In some cases, simple temporal handcrafted representations achieve performance close to more complex learning-based methods while requiring fewer parameters, simpler construction, and lower implementation complexity. This observation is important because handcrafted representations are sometimes treated only as weak baselines. Future learning-based representation papers should compare against well-tuned handcrafted baselines rather than only against simple event frames or event counts.
+
+\subsection{Simple Benchmarks Can Overestimate Progress}
+The N-MNIST results reveal another important issue: simple event-based classification datasets may overestimate representation progress. Since N-MNIST contains relatively simple digit patterns, many representations can preserve enough information for high classification accuracy. As a result, even representations that discard substantial temporal information may still perform well. A high N-MNIST accuracy does not necessarily imply that a representation preserves rich temporal structure or generalizes to more complex event-based tasks. N-MNIST is useful for validating implementation correctness, debugging training pipelines, and checking whether a representation is compatible with downstream classifiers. However, it is insufficient as the sole benchmark for representation quality.
+
+\subsection{Efficiency Changes the Interpretation of Performance}
+Event cameras are often valued for low latency, sparse sensing, and efficient dynamic perception. Therefore, event representation should not be evaluated only by downstream accuracy. The cost of constructing and processing a representation can significantly affect its practical usefulness. Handcrafted representations are usually efficient because they rely on fixed aggregation rules. Binary event images and timestamp images have compact output structures and low construction overhead. Time surfaces and voxel grids preserve more temporal information but may require additional memory or channel dimensions. Learning-based representations can provide stronger performance, but they may introduce extra cost through recurrent processing, token construction, learned aggregation, or pretraining.
+
+This leads to an accuracy-efficiency trade-off. A representation with the highest task performance may not be the best choice for real-time deployment if it requires significantly higher preprocessing time or downstream latency. Conversely, a simpler representation may be preferable if it provides competitive accuracy with much lower computational cost. For this reason, EventRepBench treats efficiency as a first-class evaluation dimension.
+
+\subsection{Benchmark Adaptation Must Be Reported Explicitly}
+A major challenge in event representation benchmarking is that many learning-based methods were originally designed as complete task-specific systems rather than standalone representation modules. Directly transplanting these methods into a unified benchmark may require changes to input resolution, event windowing, training objective, backbone architecture, or optimization settings. Therefore, it is important to distinguish between original method reproduction and benchmark-constrained adaptation. A benchmark adaptation should preserve the core representation idea of the original method while making it compatible with shared task protocols. However, its result should not be interpreted as an exact reproduction of the original paper's reported performance.
+
+This distinction is especially important for methods such as GET, Event Pre-training, Matrix-LSTM, and EvRepSL. Their original settings may involve specific datasets, architectures, pretraining strategies, or implementation details that do not directly match the unified benchmark. By explicitly documenting these adaptations, EventRepBench avoids conflating representation quality with implementation differences.
+
+\subsection{Limitations}
+EventRepBench has several limitations. First, some learning-based methods are implemented as benchmark-constrained adaptations rather than exact reproductions of their original pipelines. Although we preserve the main representation ideas, differences in architecture, optimization, or pretraining scale may affect performance. Second, full-scale object detection experiments on GEN1 are computationally expensive. The balanced subset provides a useful intermediate protocol for debugging and cost-constrained evaluation, but final conclusions should be based on full or large-scale GEN1 results when computational resources allow.
+
+Third, the current benchmark focuses on classification, optical flow estimation, and object detection. Other important event-based vision tasks, such as depth estimation, segmentation, reconstruction, visual odometry, and low-latency robotic control, are not yet fully covered. Fourth, efficiency measurement remains challenging. Representation construction time, GPU memory, and end-to-end latency can vary depending on hardware, implementation, batch size, and data loading. Therefore, efficiency results should be interpreted together with the reported implementation and hardware settings. Despite these limitations, EventRepBench provides a reproducible and extensible foundation for evaluating event camera representations under controlled cross-task protocols.
+
+\section{Conclusion}
+Event representation is a central problem in event-based vision because it determines which spatial, temporal, polarity, sparsity, and motion cues remain available to downstream models. Although many handcrafted and learning-based representations have been proposed, their empirical progress has been difficult to assess due to inconsistent datasets, preprocessing pipelines, downstream architectures, training settings, and evaluation metrics.
+
+In this paper, we presented EventRepBench, a unified cross-task benchmark for event camera representations. EventRepBench integrates representative handcrafted methods, including event frames, binary event images, timestamp images, time surfaces, and voxel grids, together with learning-based methods, including EST, Matrix-LSTM, ERGO, GET, Event Pre-training, and EvRepSL. By evaluating these representations across classification, optical flow estimation, and object detection under controlled task-specific protocols, EventRepBench aims to isolate the effect of representation design from confounding factors in the surrounding pipeline.
+
+Our results show that event representation quality is strongly task-dependent. Simple classification datasets such as N-MNIST can become saturated and may hide meaningful differences among representations. On the more challenging N-Caltech101 dataset, learning-based representations provide clear benefits, but strong handcrafted temporal baselines remain competitive with several learned adaptations. On MVSEC optical flow, the performance gap among learned representations becomes substantially smaller, indicating that representation rankings do not necessarily transfer across tasks. These findings suggest that there is no universally best event representation; representation quality depends on task requirements, evaluation protocol, and computational constraints.
+
+Beyond task performance, our analysis highlights the importance of efficiency-aware evaluation. Since event cameras are often motivated by low latency, sparse sensing, and real-time perception, representation construction time, memory footprint, and downstream latency should be reported together with accuracy, endpoint error, or mAP. EventRepBench provides a reproducible and extensible foundation for future event representation research and encourages future work to move beyond isolated single-task comparisons toward controlled, cross-task, and efficiency-aware evaluation.
+
+\bibliography{references}
+
+\end{document}
