@@ -17,8 +17,10 @@
 - Flow GT：使用 full generated GT flow frames
 - 下游网络：统一 `EVFlowNetLike` optical-flow decoder
 - 训练上限：100 epochs
+- Batch size：8
 - Early stopping：patience 10
 - Validation：从 outdoor training windows 中做 block-random validation
+- Event-flow 配对：使用 flow GT timestamps 构造 timestamp-aligned event intervals
 - 指标：AEE/EPE 和 Outlier %
 
 Validation 不从 indoor test 集抽取，避免 test leakage。
@@ -60,7 +62,7 @@ Lower is better for AEE and Outlier %.
 需要主动说明的限制：
 
 - 当前不是逐篇论文原始 optical-flow decoder/head 的完全复刻，而是 adapted reproduction。
-- Event 与 flow 的配对是固定 event window / index order pairing，不是严格 timestamp interpolation。
+- Event 与 flow 的配对已经改为基于 flow GT timestamps 的时间区间配对，更接近 MVSEC optical-flow 任务口径。
 - 结果可以支持组内 benchmark 对比，但不应直接声称超过或等同原论文 official numbers。
 - `OmniEvent✳` 只能作为论文公开结果参考，不应和六个本地方法混成同一实验排名。
 - W&B 支持已经在代码里，但本次主结果主要使用本地 CSV/SVG 曲线。
@@ -69,7 +71,6 @@ Lower is better for AEE and Outlier %.
 
 这些属于增强项，不影响当前主实验作为 adapted reproduction benchmark 提交：
 
-- timestamp-aligned event-flow pairing
 - 原论文 decoder/head 的逐篇复刻
 - 多 seed 重复实验
 - 如 tutor 要求在线 dashboard，再打开 `--wandb-project` 补跑或导入 CSV

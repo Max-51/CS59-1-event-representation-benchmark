@@ -66,7 +66,8 @@ folder level:
 
 - Do not describe this as a full reproduction of each paper's original
   optical-flow decoder or downstream training stack.
-- Event windows are paired to flow frames by fixed-window order/index. This is
-  consistent across methods, but it is not strict timestamp interpolation.
+- This artifact folder preserves the earlier checked-in result package. The
+  active runner now uses timestamp-aligned event intervals when flow timestamps
+  are available.
 - `OmniEvent✳` is reported-only and should not be ranked as a local result.
 - Use this E100 early-stop package as the current main result.

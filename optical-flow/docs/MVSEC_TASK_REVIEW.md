@@ -25,8 +25,10 @@ reference row.
 - flow GT: full generated `*_gt_flow_full.npz`
 - decoder: shared `EVFlowNetLike`
 - max epochs: 100
+- batch size: 8
 - early stopping: patience 10
 - validation: block-random outdoor validation
+- event/flow pairing: timestamp-aligned event intervals from flow GT timestamps
 - metrics: AEE/EPE and KITTI-style outlier percentage
 
 ## Current Result Table
@@ -55,8 +57,9 @@ Known limitations:
 
 - shared EVFlowNet-like decoder rather than each paper's original downstream
   decoder/head
-- fixed event window / index-order flow pairing rather than strict timestamp
-  interpolation
+- timestamp-aligned event/flow pairing is closer to the MVSEC optical-flow
+  setup, but the shared downstream decoder still makes this an adapted
+  reproduction rather than a paper-identical rerun
 - OmniEvent reported-only, not locally reproduced
 
 ## Reproducible Interface
@@ -74,3 +77,4 @@ preprocessing scripts and the exact run script:
 - `scripts/convert_mvsec_bag_events.py`
 - `scripts/generate_mvsec_flow_from_gt_bag.py`
 - `scripts/run_mvsec_100e_all_early_stop.sh`
+- `scripts/build_mvsec_e100_outputs.py`

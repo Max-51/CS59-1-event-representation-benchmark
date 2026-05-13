@@ -55,6 +55,7 @@ Known limitations:
 
 - shared EVFlowNet-like decoder rather than each paper's original downstream
   decoder/head
-- fixed event window / index-order flow pairing rather than strict timestamp
-  interpolation
+- this artifact folder preserves the earlier checked-in result package; the
+  active runner now uses timestamp-aligned event intervals when flow timestamps
+  are available
 - OmniEvent reported-only, not locally reproduced

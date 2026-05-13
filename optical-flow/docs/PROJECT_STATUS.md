@@ -1,10 +1,14 @@
 # MVSEC Optical Flow Project Status
 
-Last updated: 2026-05-02
+Last updated: 2026-05-13
 
 This file is the current handoff note for the optical-flow part of the COMP5703
-benchmark. The current main result is the completed 100-epoch-maximum
+benchmark. The current checked-in result is the completed 100-epoch-maximum
 early-stop run below.
+
+Update for the next rerun: the runner now uses timestamp-aligned event/flow
+pairing when flow timestamps are available, batch size 8 by default, and the
+corrected 1398-frame `indoor_flying1` GT file.
 
 ## Current Main Result
 
@@ -19,8 +23,10 @@ Protocol:
 - flow GT: full generated `*_gt_flow_full.npz` files
 - decoder: shared `src/mvsec_benchmark/models/evflownet_like.py`
 - max epochs: 100
+- batch size: 8
 - early stopping: patience 10
 - validation: block-random validation sampled from outdoor training windows
+- event/flow pairing: timestamp-aligned event intervals from flow GT timestamps
 - metrics: AEE/EPE and outlier percentage
 - train windows: 16329
 - eval windows: 3583
@@ -63,6 +69,8 @@ Raw per-method artifacts:
 - `artifacts/e100_earlystop_20260501/results/*.json`
 - `artifacts/e100_earlystop_20260501/logs/*.log`
 - `artifacts/e100_earlystop_20260501/logs/curves/*.csv`
+- `scripts/build_mvsec_e100_outputs.py` rebuilds the summary CSV, summary
+  Markdown, and SVG figures from a new AutoDL run.
 
 ## Interpretation
 
@@ -78,8 +86,10 @@ Important limits:
 
 - This is not an exact reimplementation of each paper's original optical-flow
   decoder or downstream training stack.
-- Event windows are paired to flow frames by fixed-window order/index. This is
-  consistent across methods, but it is not strict timestamp interpolation.
+- Event windows are paired to flow frames by timestamp intervals when flow
+  timestamps are available. This is closer to the MVSEC optical-flow setup than
+  the previous pairing approach, while still using the shared downstream
+  decoder.
 - The numbers are suitable for the group benchmark comparison, but should not be
   presented as official-paper reproduction numbers.
 - `OmniEvent✳` is included only as reported-only context. Do not rank it as a
@@ -115,9 +125,20 @@ Known path detail:
 - `indoor_flying1_left_events_6m.h5` is under `indoor_flying1/`.
 - `indoor_flying2/3` event files and all indoor `*_gt_flow_full.npz` files are
   under `indoor_flying/`.
+- Use the corrected 1398-frame `indoor_flying1_gt_flow_2000.npz` as the
+  `indoor_flying1` GT file before rerunning.
 
-Reruns are not needed for the current deliverable unless the group asks for a
-W&B dashboard, extra seeds, a new baseline, or timestamp-aligned pairing.
+Recommended rerun commands:
+
+```bash
+cd /root/autodl-tmp/capstone/5703
+OMP_NUM_THREADS=8 BATCH_SIZE=8 bash scripts/run_mvsec_100e_all_early_stop.sh
+python scripts/build_mvsec_e100_outputs.py \
+  --results-dir results \
+  --curve-dir logs/curves \
+  --summary-dir results/summary \
+  --figures-dir results/figures
+```
 
 ## Local Archive Notes
 

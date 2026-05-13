@@ -40,8 +40,9 @@ Important limits:
 
 - This is not an exact reimplementation of each paper's original optical-flow
   decoder/head.
-- Event-flow pairing is fixed-window/order-based, not strict timestamp
-  interpolation.
+- This artifact folder preserves the earlier checked-in result package. The
+  active runner now uses timestamp-aligned event intervals when flow timestamps
+  are available.
 - `OmniEvent✳` is a reference row from the paper and should not be mixed with
   the six local runs as the same type of result.
 
