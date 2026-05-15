@@ -35,6 +35,7 @@ DATASET_DEFAULTS = {
         "height"        : 180,
         "width"         : 240,
         "official_split": False,
+        "split_file"    : "data/splits/tonic_split_seed42.json",
     },
     "nmnist": {
         "tonic_cls"     : "NMNIST",
@@ -42,6 +43,14 @@ DATASET_DEFAULTS = {
         "height"        : 34,
         "width"         : 34,
         "official_split": True,
+    },
+    "cifar10dvs": {
+        "tonic_cls"     : "CIFAR10DVS",
+        "num_classes"   : 10,
+        "height"        : 128,
+        "width"         : 128,
+        "official_split": False,
+        "train_fraction": 0.8,
     },
 }
 
@@ -76,6 +85,15 @@ def _build_class_to_idx(tonic_dataset):
     return {cls: idx for idx, cls in enumerate(sorted(labels))}
 
 
+def _split_indices(length, train_fraction, seed):
+    indices = list(range(length))
+    rng = random.Random(seed)
+    rng.shuffle(indices)
+    split_at = int(round(length * float(train_fraction)))
+    split_at = min(max(split_at, 1), max(length - 1, 1))
+    return sorted(indices[:split_at]), sorted(indices[split_at:])
+
+
 def build_dataloaders(args, representation, ds_cfg):
     tonic_cls = getattr(tonic.datasets, ds_cfg["tonic_cls"])
 
@@ -87,11 +105,21 @@ def build_dataloaders(args, representation, ds_cfg):
     else:
         all_tonic    = tonic_cls(save_to=args.data_root)
         class_to_idx = _build_class_to_idx(all_tonic)
-        with open(args.split_file) as f:
-            splits = json.load(f)
+        split_file = args.split_file or ds_cfg.get("split_file")
+        if split_file:
+            with open(split_file) as f:
+                splits = json.load(f)
+            train_indices = splits["train"]
+            test_indices = splits["test"]
+        else:
+            train_indices, test_indices = _split_indices(
+                len(all_tonic),
+                ds_cfg.get("train_fraction", 0.8),
+                args.seed,
+            )
         full_ds   = EventDataset(all_tonic, representation, class_to_idx)
-        train_set = Subset(full_ds, splits["train"])
-        test_set  = Subset(full_ds, splits["test"])
+        train_set = Subset(full_ds, train_indices)
+        test_set  = Subset(full_ds, test_indices)
 
     def seed_worker(worker_id):
         np.random.seed(args.seed + worker_id)
@@ -229,9 +257,9 @@ def main():
                             "matrix_lstm", "get", "omnievent",
                         ])
     parser.add_argument("--dataset",        default="ncaltech101",
-                        choices=["ncaltech101","nmnist"])
+                        choices=sorted(DATASET_DEFAULTS))
     parser.add_argument("--data_root",      required=True)
-    parser.add_argument("--split_file",     default="data/splits/tonic_split_seed42.json")
+    parser.add_argument("--split_file",     default=None)
     parser.add_argument("--checkpoint_dir", required=True)
     parser.add_argument("--results_dir",    default="results/classification")
     parser.add_argument("--repgen_path",    default=None)

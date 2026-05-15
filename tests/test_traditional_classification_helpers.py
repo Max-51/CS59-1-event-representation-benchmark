@@ -6,6 +6,7 @@ from train_traditional_classification import (
     RepresentationStats,
     build_label_mapping,
     normalize_tonic_sample,
+    deterministic_train_test_split,
     load_split_file,
     split_train_val,
 )
@@ -20,6 +21,16 @@ class TraditionalClassificationHelperTest(unittest.TestCase):
         self.assertEqual(len(val_a), 4)
         self.assertFalse(set(train_a) & set(val_a))
         self.assertEqual(sorted(train_a + val_a), list(range(20)))
+
+    def test_deterministic_train_test_split_uses_seeded_fraction(self):
+        train_a, test_a = deterministic_train_test_split(10, train_fraction=0.8, seed=42)
+        train_b, test_b = deterministic_train_test_split(10, train_fraction=0.8, seed=42)
+        self.assertEqual(train_a, train_b)
+        self.assertEqual(test_a, test_b)
+        self.assertEqual(len(train_a), 8)
+        self.assertEqual(len(test_a), 2)
+        self.assertFalse(set(train_a) & set(test_a))
+        self.assertEqual(sorted(train_a + test_a), list(range(10)))
 
     def test_load_split_file_reads_int_indices(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -33,6 +33,14 @@ DATASET_DEFAULTS = {
         "official_split": False,
         "split_file": "data/splits/tonic_split_seed42.json",
     },
+    "cifar10dvs": {
+        "tonic_name": "CIFAR10DVS",
+        "num_classes": 10,
+        "height": 128,
+        "width": 128,
+        "official_split": False,
+        "train_fraction": 0.8,
+    },
 }
 
 
@@ -98,6 +106,15 @@ def sample_indices(length, limit):
     if limit is None:
         return list(range(length))
     return list(range(min(int(limit), length)))
+
+
+def deterministic_train_test_split(length, train_fraction, seed):
+    indices = list(range(length))
+    rng = random.Random(seed)
+    rng.shuffle(indices)
+    split_at = int(round(length * float(train_fraction)))
+    split_at = min(max(split_at, 1), max(length - 1, 1))
+    return sorted(indices[:split_at]), sorted(indices[split_at:])
 
 
 def event_count(events):
@@ -334,9 +351,17 @@ def build_dataloaders(args, deps, representation):
         train_indices = sample_indices(len(base_train), args.train_limit)
         test_indices = sample_indices(len(base_test), args.test_limit)
     else:
-        split_file = Path(args.split_file or DATASET_DEFAULTS[dataset_name]["split_file"])
-        actual_split_file = str(split_file)
-        train_indices, test_indices = load_split_file(split_file)
+        split_file_value = args.split_file or DATASET_DEFAULTS[dataset_name].get("split_file")
+        if split_file_value:
+            split_file = Path(split_file_value)
+            actual_split_file = str(split_file)
+            train_indices, test_indices = load_split_file(split_file)
+        else:
+            train_indices, test_indices = deterministic_train_test_split(
+                len(base_train),
+                DATASET_DEFAULTS[dataset_name].get("train_fraction", 0.8),
+                args.seed,
+            )
         if args.train_limit is not None:
             train_indices = train_indices[: int(args.train_limit)]
         if args.test_limit is not None:
