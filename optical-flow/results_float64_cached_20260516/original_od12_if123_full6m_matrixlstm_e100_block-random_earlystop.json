@@ -1,0 +1,43 @@
+{
+  "adapter_name": "matrixlstm",
+  "aee": 2.18565403580255,
+  "best_epoch": 85,
+  "best_val_aee": 1.7705821633338927,
+  "channels": 4,
+  "curve_log_path": "logs_float64_cached_20260516/curves/original_od12_if123_full6m_matrixlstm_e100_block-random_curve.csv",
+  "curve_log_requested": "logs_float64_cached_20260516/curves/original_od12_if123_full6m_matrixlstm_e100_block-random_curve.csv",
+  "early_stop_min_delta": 0.001,
+  "early_stop_patience": 10,
+  "early_stop_val_source_counts": {
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_left_events_6m.h5": 11,
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_left_events_6m.h5": 9
+  },
+  "early_stop_val_strategy": "block-random",
+  "early_stop_val_strategy_requested": "block-random",
+  "early_stop_val_windows": 20,
+  "early_stop_val_windows_requested": 20,
+  "early_stopped": true,
+  "epochs_completed": 95,
+  "eval_sets": [
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying1/indoor_flying1_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying1_gt_flow_2000.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_gt_flow_full.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_gt_flow_full.npz"
+  ],
+  "eval_windows": 871,
+  "max_eval_windows_per_set": null,
+  "max_train_windows_per_set": null,
+  "outlier_percent": 25.195438309359606,
+  "progress_every": 100,
+  "stride": 200,
+  "train_sets": [
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_gt_flow_full.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_gt_flow_full.npz"
+  ],
+  "train_windows": 149,
+  "valid_count": 78355160,
+  "wandb_mode": null,
+  "wandb_project": null,
+  "wandb_run_name": null,
+  "window_alignment": "timestamp",
+  "window_size": 200
+}
