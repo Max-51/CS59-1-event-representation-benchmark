@@ -1,7 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-METHODS=("ergo" "est" "event_pretraining" "evrepsl" "get" "matrixlstm")
+LEARNING_METHODS=("ergo" "est" "event_pretraining" "evrepsl" "get" "matrixlstm")
+TRADITIONAL_METHODS=("event_frame" "binary_event_image" "timestamp_image" "time_surface" "voxel_grid")
+METHOD_GROUP="${METHOD_GROUP:-learning}"
+
+case "$METHOD_GROUP" in
+  learning)
+    METHODS=("${LEARNING_METHODS[@]}")
+    ;;
+  traditional)
+    METHODS=("${TRADITIONAL_METHODS[@]}")
+    ;;
+  all)
+    METHODS=("${LEARNING_METHODS[@]}" "${TRADITIONAL_METHODS[@]}")
+    ;;
+  *)
+    echo "ERROR: METHOD_GROUP must be one of: learning, traditional, all" >&2
+    exit 2
+    ;;
+esac
 if [[ $# -gt 0 ]]; then
   METHODS=("$@")
 fi
@@ -29,6 +47,7 @@ ERROR: DATA_ROOT is not set.
 Set DATA_ROOT to the processed MVSEC folder before running, for example:
 
   DATA_ROOT=/path/to/mvsec OMP_NUM_THREADS=8 BATCH_SIZE=8 bash scripts/run_mvsec_100e_all_early_stop.sh
+  DATA_ROOT=/path/to/mvsec METHOD_GROUP=traditional bash scripts/run_mvsec_100e_all_early_stop.sh
 
 Expected files include:
   outdoor_day/outdoor_day1_left_events_6m.h5
@@ -87,7 +106,7 @@ for method in "${METHODS[@]}"; do
   echo "===== done ${method} ====="
 done
 
-PACKAGE_PATH="$PACKAGE_DIR/mvsec_timestamp_bs8_e${EPOCHS}_earlystop_results_$(date +%Y%m%d_%H%M).tar.gz"
+PACKAGE_PATH="$PACKAGE_DIR/mvsec_timestamp_${METHOD_GROUP}_bs${BATCH_SIZE}_e${EPOCHS}_earlystop_results_$(date +%Y%m%d_%H%M).tar.gz"
 tar -czf "$PACKAGE_PATH" "$OUT_DIR" "$LOG_DIR" docs README.md README_FOR_GROUP.md
 echo "===== all done ====="
 ls -lh "$PACKAGE_PATH"

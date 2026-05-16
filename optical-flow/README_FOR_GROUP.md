@@ -32,8 +32,11 @@ only after the corrected rerun is complete.
 - training: max 100 epochs, batch size 8, early-stop patience 10
 - validation: block-random outdoor validation
 - event/flow pairing: timestamp-aligned event intervals from flow GT timestamps
-- runnable methods: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`,
-  `matrixlstm`
+- default learning methods: `ergo`, `est`, `event_pretraining`, `evrepsl`,
+  `get`, `matrixlstm`
+- optional traditional methods under the same protocol:
+  `event_frame`, `binary_event_image`, `timestamp_image`, `time_surface`,
+  `voxel_grid`
 
 This is a unified downstream optical-flow benchmark / adapted reproduction, not
 a paper-identical rerun of every original optical-flow codebase.
@@ -61,6 +64,16 @@ BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
 
+Traditional-method rerun under the same timestamp-aligned protocol:
+
+```bash
+DATA_ROOT=/path/to/processed/mvsec \
+METHOD_GROUP=traditional \
+OMP_NUM_THREADS=8 \
+BATCH_SIZE=8 \
+bash scripts/run_mvsec_100e_all_early_stop.sh
+```
+
 Post-run table and figure generation:
 
 ```bash
@@ -69,6 +82,12 @@ python scripts/build_mvsec_e100_outputs.py \
   --curve-dir logs/curves \
   --summary-dir results/summary \
   --figures-dir results/figures
+```
+
+For traditional-only outputs, add:
+
+```bash
+--method-group traditional
 ```
 
 ## Most Important Entry Points

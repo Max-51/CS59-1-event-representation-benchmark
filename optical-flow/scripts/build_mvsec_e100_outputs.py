@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 
-METHOD_ORDER = ["ergo", "est", "event_pretraining", "evrepsl", "get", "matrixlstm"]
+LEARNING_METHOD_ORDER = ["ergo", "est", "event_pretraining", "evrepsl", "get", "matrixlstm"]
+TRADITIONAL_METHOD_ORDER = ["event_frame", "binary_event_image", "timestamp_image", "time_surface", "voxel_grid"]
 METHOD_LABELS = {
     "ergo": "ERGO",
     "est": "EST",
@@ -15,6 +16,11 @@ METHOD_LABELS = {
     "evrepsl": "EvRepSL",
     "get": "GET",
     "matrixlstm": "MatrixLSTM",
+    "event_frame": "Event Frame",
+    "binary_event_image": "Binary Event Image",
+    "timestamp_image": "Timestamp Image",
+    "time_surface": "Time Surface",
+    "voxel_grid": "Voxel Grid",
 }
 
 
@@ -33,6 +39,7 @@ def _load_result(path: Path) -> dict[str, Any]:
         "train_windows": int(data.get("train_windows") or 0),
         "eval_windows": int(data.get("eval_windows") or 0),
         "valid_count": int(data.get("valid_count") or 0),
+        "window_alignment": str(data.get("window_alignment") or ""),
         "file": str(path.as_posix()),
     }
 
@@ -58,6 +65,7 @@ def _write_summary_csv(rows: list[dict[str, Any]], output: Path) -> None:
         "train_windows",
         "eval_windows",
         "valid_count",
+        "window_alignment",
         "file",
     ]
     with output.open("w", newline="", encoding="utf-8") as f:
@@ -70,7 +78,7 @@ def _write_summary_md(rows: list[dict[str, Any]], output: Path) -> None:
     lines = [
         "# MVSEC Optical Flow E100 Early-Stop Summary",
         "",
-        "Protocol: train on `outdoor_day1 + outdoor_day2`, evaluate on `indoor_flying1/2/3`, event input from extracted left-camera events, full generated GT flow frames, max 100 epochs, early-stop patience 10, block-random validation from outdoor train set.",
+        "Protocol: train on `outdoor_day1 + outdoor_day2`, evaluate on `indoor_flying1/2/3`, event input from extracted left-camera events, full generated GT flow frames, max 100 epochs, early-stop patience 10, block-random validation from outdoor train set, timestamp-aligned event/flow windows.",
         "",
         "Lower is better for AEE and outlier percentage.",
         "",
@@ -83,21 +91,31 @@ def _write_summary_md(rows: list[dict[str, Any]], output: Path) -> None:
                 **row,
             )
         )
-    lines.extend(
+    include_omni = any(row["method"] in LEARNING_METHOD_ORDER for row in rows)
+    if include_omni:
+        lines.extend(
+            [
+                "| OmniEvent* | 0.9900 | 3.24 | 96.76 | paper | paper | paper | paper | paper |",
+                "",
+                "*OmniEvent is a paper-reported reference row. Its displayed values are simple averages from the OmniEvent paper's MVSEC `indoor_flying1/2/3` results, not a local run in this repository. Source: arXiv:2508.01842, Table 2.",
+                "",
+            ]
+        )
+    notes = [
+        "## Reporting Notes",
+        "",
+        "- This is a unified downstream optical-flow benchmark / adapted reproduction, not an exact reimplementation of each paper's original optical-flow decoder.",
+        "- Local methods are compared under the same EVFlowNet-like decoder and the same MVSEC train/eval protocol, so the comparison is fair inside this benchmark.",
+    ]
+    if include_omni:
+        notes.append("- `OmniEvent*` is included only as reported-only context and should not be ranked as a local result from this pipeline.")
+    notes.extend(
         [
-            "| OmniEvent* | 0.9900 | 3.24 | 96.76 | paper | paper | paper | paper | paper |",
-            "",
-            "*OmniEvent is a paper-reported reference row. Its displayed values are simple averages from the OmniEvent paper's MVSEC `indoor_flying1/2/3` results, not a local run in this repository. Source: arXiv:2508.01842, Table 2.",
-            "",
-            "## Reporting Notes",
-            "",
-            "- This is a unified downstream optical-flow benchmark / adapted reproduction, not an exact reimplementation of each paper's original optical-flow decoder.",
-            "- The six event representations are compared under the same EVFlowNet-like decoder and the same MVSEC train/eval protocol, so the comparison is fair inside this benchmark.",
-            "- `OmniEvent*` is included only as reported-only context and should not be ranked as a local result from this pipeline.",
             "- Local CSV curves and SVG figures are generated from the run JSON and curve CSV files.",
             "",
         ]
     )
+    lines.extend(notes)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines), encoding="utf-8")
 
@@ -139,12 +157,12 @@ def _load_curve(path: Path) -> list[dict[str, float]]:
         return rows
 
 
-def _plot_curves(curve_dir: Path, figures_dir: Path) -> None:
+def _plot_curves(curve_dir: Path, figures_dir: Path, method_order: list[str]) -> None:
     import matplotlib.pyplot as plt
 
     curve_files = {
         method: curve_dir / f"original_od12_if123_full6m_{method}_e100_block-random_curve.csv"
-        for method in METHOD_ORDER
+        for method in method_order
     }
     existing = {method: path for method, path in curve_files.items() if path.exists()}
     if not existing:
@@ -182,19 +200,36 @@ def main() -> None:
     parser.add_argument("--curve-dir", type=Path, default=Path("logs/curves"))
     parser.add_argument("--summary-dir", type=Path, default=Path("results/summary"))
     parser.add_argument("--figures-dir", type=Path, default=Path("results/figures"))
+    parser.add_argument(
+        "--method-group",
+        choices=["learning", "traditional", "all", "auto"],
+        default="learning",
+        help="Which local methods to require and summarize.",
+    )
     args = parser.parse_args()
 
     files = _find_result_files(args.results_dir)
     rows_by_method = {_load_result(path)["method"]: _load_result(path) for path in files}
-    missing = [method for method in METHOD_ORDER if method not in rows_by_method]
+    if args.method_group == "learning":
+        method_order = LEARNING_METHOD_ORDER
+    elif args.method_group == "traditional":
+        method_order = TRADITIONAL_METHOD_ORDER
+    elif args.method_group == "all":
+        method_order = LEARNING_METHOD_ORDER + TRADITIONAL_METHOD_ORDER
+    else:
+        known_order = LEARNING_METHOD_ORDER + TRADITIONAL_METHOD_ORDER
+        method_order = [method for method in known_order if method in rows_by_method]
+        method_order.extend(sorted(method for method in rows_by_method if method not in method_order))
+
+    missing = [method for method in method_order if method not in rows_by_method]
     if missing:
         raise SystemExit(f"Missing result JSON for methods: {', '.join(missing)}")
-    rows = [rows_by_method[method] for method in METHOD_ORDER]
+    rows = [rows_by_method[method] for method in method_order]
 
     _write_summary_csv(rows, args.summary_dir / "mvsec_e100_earlystop_summary.csv")
     _write_summary_md(rows, args.summary_dir / "mvsec_e100_earlystop_summary.md")
     _plot_bars(rows, args.figures_dir)
-    _plot_curves(args.curve_dir, args.figures_dir)
+    _plot_curves(args.curve_dir, args.figures_dir, method_order)
 
     print(f"wrote {args.summary_dir / 'mvsec_e100_earlystop_summary.csv'}")
     print(f"wrote {args.summary_dir / 'mvsec_e100_earlystop_summary.md'}")

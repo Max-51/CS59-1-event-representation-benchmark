@@ -1,8 +1,8 @@
 # MVSEC Optical Flow Benchmark
 
 This folder contains the optical-flow part of the COMP5703 benchmark group
-work. It implements a unified downstream benchmark on MVSEC for six runnable
-event representations, all evaluated with the same EVFlowNet-like decoder.
+work. It implements a unified downstream benchmark on MVSEC for runnable event
+representations, all evaluated with the same EVFlowNet-like decoder.
 
 This is an adapted reproduction benchmark. It is not a bit-for-bit rerun of
 each paper's original optical-flow decoder, training stack, or private
@@ -13,8 +13,10 @@ downstream head.
 - Dataset: MVSEC optical-flow sequences.
 - Train split: `outdoor_day1 + outdoor_day2`.
 - Test split: `indoor_flying1/2/3`.
-- Runnable methods: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`,
+- Default learning methods: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`,
   `matrixlstm`.
+- Optional traditional methods under the same protocol: `event_frame`,
+  `binary_event_image`, `timestamp_image`, `time_surface`, `voxel_grid`.
 - Paper-reference only: OmniEvent, not a local runnable method.
 - Decoder: shared `EVFlowNetLike`.
 - Training protocol: max 100 epochs, batch size 8, early-stop patience 10.
@@ -42,7 +44,7 @@ The next formal run should use:
 - event HDF5: regenerated with the current converter so the timestamp column is
   float64, not float32
 - shared decoder: `src/mvsec_benchmark/models/evflownet_like.py`
-- method list: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`,
+- default method list: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`,
   `matrixlstm`
 
 Before launching the long run, use `scripts/check_mvsec_alignment.py` to check
@@ -63,6 +65,16 @@ BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
 
+To rerun the traditional methods under the same timestamp-aligned protocol:
+
+```bash
+DATA_ROOT=/path/to/processed/mvsec \
+METHOD_GROUP=traditional \
+OMP_NUM_THREADS=8 \
+BATCH_SIZE=8 \
+bash scripts/run_mvsec_100e_all_early_stop.sh
+```
+
 After the run finishes, rebuild the table and figures:
 
 ```bash
@@ -73,12 +85,14 @@ python scripts/build_mvsec_e100_outputs.py \
   --figures-dir results/figures
 ```
 
+For traditional-only outputs, add `--method-group traditional`.
+
 ## Reporting Notes
 
 - Describe this as a unified downstream optical-flow benchmark / adapted
   reproduction.
-- The six runnable event representations use the same EVFlowNet-like decoder
-  and the same train/eval split.
+- Runnable local event representations use the same EVFlowNet-like decoder and
+  the same train/eval split.
 - Do not directly compare the future local numbers as official-paper
   reproduction numbers, because several papers do not release the same
   optical-flow downstream code.

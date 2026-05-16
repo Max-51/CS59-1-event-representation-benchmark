@@ -23,7 +23,10 @@ The updated runner uses:
 
 - train: `outdoor_day1 + outdoor_day2`
 - eval: `indoor_flying1 + indoor_flying2 + indoor_flying3`
-- methods: `ergo`, `est`, `event_pretraining`, `evrepsl`, `get`, `matrixlstm`
+- default learning methods: `ergo`, `est`, `event_pretraining`, `evrepsl`,
+  `get`, `matrixlstm`
+- optional traditional methods: `event_frame`, `binary_event_image`,
+  `timestamp_image`, `time_surface`, `voxel_grid`
 - shared decoder: `EVFlowNetLike`
 - max epochs: 100
 - batch size: 8
@@ -92,7 +95,7 @@ python scripts/check_mvsec_alignment.py --data-root "$DATA_ROOT"
 This prints the event timestamp range and the flow timestamp coverage for each
 sequence. It is a quick sanity check before launching the long run.
 
-## 4. Run the Six-Method Benchmark
+## 4. Run the Learning Benchmark
 
 ```bash
 DATA_ROOT=/path/to/mvsec \
@@ -111,6 +114,16 @@ The runner writes:
 If GPU memory is tight, keep `BATCH_SIZE=8` first and only lower it if the run
 fails with CUDA out-of-memory.
 
+To run the traditional methods under the same timestamp-aligned protocol:
+
+```bash
+DATA_ROOT=/path/to/mvsec \
+METHOD_GROUP=traditional \
+OMP_NUM_THREADS=8 \
+BATCH_SIZE=8 \
+bash scripts/run_mvsec_100e_all_early_stop.sh
+```
+
 ## 5. Build Tables and Figures
 
 After the benchmark finishes:
@@ -121,6 +134,12 @@ python scripts/build_mvsec_e100_outputs.py \
   --curve-dir logs/curves \
   --summary-dir results/summary \
   --figures-dir results/figures
+```
+
+For traditional-only results, add:
+
+```bash
+--method-group traditional
 ```
 
 Expected generated deliverables:
