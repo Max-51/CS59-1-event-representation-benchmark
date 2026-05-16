@@ -11,13 +11,13 @@ def _prepare_events(events: np.ndarray, sensor_size: tuple[int, int]) -> tuple[n
     height, width = sensor_size
     if events.size == 0:
         empty_i = np.zeros((0,), dtype=np.int64)
-        empty_f = np.zeros((0,), dtype=np.float32)
+        empty_f = np.zeros((0,), dtype=np.float64)
         return empty_i, empty_i, empty_f, empty_i
 
     arr = np.asarray(events)
     x = arr[:, 0].astype(np.int64)
     y = arr[:, 1].astype(np.int64)
-    t = arr[:, 2].astype(np.float32)
+    t = arr[:, 2].astype(np.float64)
     p = arr[:, 3].astype(np.int64)
 
     valid = (x >= 0) & (x < width) & (y >= 0) & (y < height)
@@ -99,12 +99,13 @@ class TimeSurfaceAdapter:
         if len(x) == 0:
             return np.zeros_like(latest, dtype=np.float32)
 
-        np.maximum.at(latest, (_polarity_channels(p), y, x), t)
-        span = max(float(t[-1] - t[0]), 1.0)
+        t_rel = (t - float(t[0])).astype(np.float32)
+        np.maximum.at(latest, (_polarity_channels(p), y, x), t_rel)
+        span = max(float(t_rel[-1]), 1.0)
         tau = max(self.tau_ratio * span, 1.0)
         rep = np.zeros_like(latest, dtype=np.float32)
         active = np.isfinite(latest)
-        rep[active] = np.exp(-(float(t[-1]) - latest[active]) / tau).astype(np.float32)
+        rep[active] = np.exp(-(float(t_rel[-1]) - latest[active]) / tau).astype(np.float32)
         return rep
 
 
