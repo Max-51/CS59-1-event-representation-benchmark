@@ -291,8 +291,9 @@ def run_torch_train_eval_benchmark(
 
     This is the path used for the original-style MVSEC protocol:
     outdoor_day1/2 for training and indoor_flying1/2/3 for evaluation.
-    Batches are moved to the target device lazily to avoid holding all outdoor
-    representations in GPU memory at once.
+    Representations are built once per method and cached in host memory. This
+    avoids recomputing CPU-heavy event encodings every epoch while still moving
+    only the current batch to the target device.
     """
     if not train_samples:
         raise ValueError("At least one training window is required.")
@@ -393,30 +394,36 @@ def run_torch_train_eval_benchmark(
         f"val_windows={len(val_samples)} eval_windows={len(eval_samples)} "
         f"val_strategy={early_stop_val_strategy if val_samples else 'none'}"
     )
-    _progress("[setup] building first representation")
-    first_rep = adapter.build(effective_train_samples[0].events, effective_train_samples[0].sensor_size)
-    channels = int(first_rep.shape[0])
+    def _build_rep_cache(samples: list[FlowWindowSample], *, phase: str) -> list[np.ndarray]:
+        reps: list[np.ndarray] = []
+        total = len(samples)
+        _progress(f"[{phase}] caching representations={total}")
+        for idx, sample in enumerate(samples):
+            reps.append(adapter.build(sample.events, sample.sensor_size))
+            current = idx + 1
+            if progress_every and (current == 1 or current == total or current % progress_every == 0):
+                _progress(f"[{phase}] cached representation {current}/{total}")
+        return reps
+
+    train_reps = _build_rep_cache(effective_train_samples, phase="train")
+    val_reps = _build_rep_cache(val_samples, phase="val") if val_samples else []
+    eval_reps = _build_rep_cache(eval_samples, phase="eval")
+    channels = int(train_reps[0].shape[0])
     model = EVFlowNetLike(in_channels=channels, base_channels=base_channels).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    def _make_batch(samples: list[FlowWindowSample], indices: object, *, phase: str, total: int) -> tuple[object, object]:
-        reps: list[np.ndarray] = []
-        for raw_idx in indices:
-            idx = int(raw_idx)
-            if phase == "train" and idx == 0:
-                rep = first_rep
-            else:
-                rep = adapter.build(samples[idx].events, samples[idx].sensor_size)
-            reps.append(rep)
-            current = idx + 1
-            if progress_every and (current == 1 or current == total or current % progress_every == 0):
-                _progress(f"[{phase}] built representation {current}/{total}")
-        x_np = np.stack(reps, axis=0)
+    def _make_batch(
+        samples: list[FlowWindowSample],
+        reps: list[np.ndarray],
+        indices: object,
+    ) -> tuple[object, object]:
+        x_np = np.stack([reps[int(i)] for i in indices], axis=0)
         y_np = np.stack([np.moveaxis(samples[int(i)].gt_flow, -1, 0) for i in indices], axis=0)
         return torch.from_numpy(x_np).float().to(device), torch.from_numpy(y_np).float().to(device)
 
     def _evaluate_samples(
         samples: list[FlowWindowSample],
+        reps: list[np.ndarray],
         *,
         collect_window_metrics: bool,
         phase: str,
@@ -433,7 +440,7 @@ def run_torch_train_eval_benchmark(
             for start in range(0, len(samples), eval_batch):
                 stop = min(start + eval_batch, len(samples))
                 idx = list(range(start, stop))
-                x_batch, _ = _make_batch(samples, idx, phase=phase, total=len(samples))
+                x_batch, _ = _make_batch(samples, reps, idx)
                 pred_batch = model(x_batch).detach().cpu().numpy()
                 for offset, pred in enumerate(pred_batch):
                     eval_index = start + offset
@@ -476,7 +483,7 @@ def run_torch_train_eval_benchmark(
         epoch_batches = 0
         for start in range(0, num_train, batch_size):
             idx = perm[start:start + batch_size].tolist()
-            x_batch, y_batch = _make_batch(effective_train_samples, idx, phase="train", total=num_train)
+            x_batch, y_batch = _make_batch(effective_train_samples, train_reps, idx)
             pred = model(x_batch)
             loss = F.smooth_l1_loss(pred, y_batch)
             optimizer.zero_grad()
@@ -492,7 +499,7 @@ def run_torch_train_eval_benchmark(
         _progress(f"[train] epoch {epoch + 1}/{epochs} mean_loss={avg_loss:.6f}")
 
         if early_stop_patience is not None:
-            val_metrics, _ = _evaluate_samples(val_samples, collect_window_metrics=False, phase="val")
+            val_metrics, _ = _evaluate_samples(val_samples, val_reps, collect_window_metrics=False, phase="val")
             val_aee = _mean_aee(val_metrics)
             improved = best_val_aee is None or val_aee < best_val_aee - early_stop_min_delta
             if improved:
@@ -582,6 +589,7 @@ def run_torch_train_eval_benchmark(
 
     metrics, window_metrics = _evaluate_samples(
         eval_samples,
+        eval_reps,
         collect_window_metrics=return_window_metrics,
         phase="eval",
     )
