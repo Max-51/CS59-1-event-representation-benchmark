@@ -1,0 +1,64 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=0.82in]{geometry}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setlength{\parskip}{0.62em}
+\setlength{\parindent}{0pt}
+
+\title{Traditional 与 Learning-based 事件表示对比报告\\基于 2026-05-16 MVSEC float64 重跑结果}
+\author{}
+\date{2026-05-16}
+
+\begin{document}
+\sloppy
+\maketitle
+
+\paragraph{Protocol Alignment.} 本版报告保留 N-MNIST 与 N-Caltech101 的已对齐分类结果，并将 MVSEC optical flow 替换为 2026-05-16 的 float64 数据重跑结果。MVSEC 使用 outdoor\_day1/2 训练、indoor\_flying1/2/3 测试，event HDF5 timestamp 为 float64，event/flow window 使用 flow GT timestamps 做 timestamp alignment。所有本地 optical-flow 方法共享同一个 EVFlowNet-like decoder、batch size 8、100 epoch 上限、early stopping patience 10。注意：older May 8 MVSEC table used pre-float64/full-window artifacts and is kept only as historical context。
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.90\linewidth]{nmnist_accuracy_full_aligned.pdf}
+  \caption{N-MNIST 完整官方测试集准确率对比。蓝色为 learning-based 方法，橙色为 traditional baseline。}
+  \label{fig:nmnist-acc}
+\end{figure}
+
+\paragraph{N-MNIST Is Saturated But Comparable.} 在完整 N-MNIST setting 下，最佳方法是 Matrix-LSTM，test accuracy 为 99.40\%。最佳 learning-based 方法 Matrix-LSTM 为 99.40\%，最佳 traditional 方法 Voxel Grid 为 99.08\%，差距为 0.32 个百分点。除 Binary Event Image 外，大多数方法集中在 98.18--99.40\% 区间，说明 N-MNIST 已接近饱和，适合验证 pipeline 和基本表示能力，但不适合单独作为强结论来源。最弱方法 Binary Event Image 为 95.06\%。
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{nmnist_accuracy_epoch_scatter.pdf}
+  \caption{N-MNIST 准确率与最佳 epoch 的关系。点大小随输入通道数变化，用于展示表示维度、收敛位置和准确率之间的权衡。}
+  \label{fig:nmnist-eff}
+\end{figure}
+
+\paragraph{Accuracy-Efficiency Trade-off.} N-MNIST 的 best epoch 显示出比最终准确率更有区分度的模式。Learning-based 方法大多在第 15--26 epoch 取得最佳结果，其中 Matrix-LSTM 在第 15 epoch 达到 99.40\%，GET 在第 23 epoch 达到 99.33\%，EST 在第 16 epoch 达到 99.28\%。Traditional 方法中 Timestamp Image 的最佳 epoch 仅为 6，准确率仍有 98.05\%；Voxel Grid 在第 12 epoch 达到 99.08\%。这说明更复杂或多通道的表示未必总是需要更长训练，但在 N-MNIST 这种饱和任务中，小幅准确率提升通常伴随更高表示维度或更复杂 adapter。
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{ncaltech101_accuracy_full_aligned.pdf}
+  \caption{N-Caltech101 分类准确率对比。该任务比 N-MNIST 更能拉开 representation capacity 的差异。}
+  \label{fig:ncaltech}
+\end{figure}
+
+\paragraph{N-Caltech101 Reveals Larger Capacity Gaps.} N-Caltech101 的结果与 N-MNIST 不同。当前最佳 learning-based 方法 EST adaptation 为 70.44\%，最佳 traditional 方法 Timestamp Image 为 52.93\%，差距达到 17.51 个百分点。这个差距比 N-MNIST 明显得多，说明在类别数更多、形状变化更复杂的分类任务上，learning-based representation 更能利用事件流中的跨时间结构；traditional 方法在此处更适合作为非学习表示下界和计算成本参照。
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{mvsec_aee_float64.pdf}
+  \caption{MVSEC optical flow 统一协议 AEE 对比，使用 2026-05-16 float64 timestamp 数据重跑结果。AEE 越低越好，横轴采用局部放大。}
+  \label{fig:mvsec}
+\end{figure}
+
+\paragraph{MVSEC Updated Result.} 最新 MVSEC float64 重跑后，整体最佳方法变为 EST，AEE 为 2.0429，outlier rate 为 23.36\%。最佳 traditional 方法是 Voxel Grid，AEE 为 2.0759；最佳 learning-based 方法是 EST，AEE 为 2.0429。与 5 月 8 日旧表不同，新表不再支持 ``traditional Timestamp Image 是 MVSEC 最优'' 的结论；在修正 float64 timestamp 与 timestamp-aligned protocol 后，EST 和 GET 均略优于最佳 traditional baseline。
+
+\paragraph{Takeaway For Presentation.} 当前证据支持更细的分任务结论。N-MNIST 上两类方法都接近天花板，最佳 learning-based 只比最佳 traditional 高 0.32 个百分点，因此不应过度解读微小排名；N-Caltech101 上 learning-based 优势清晰，最佳方法比最佳 traditional 高 17.51 个百分点；MVSEC float64 重跑后，learning-based 的 EST/GET 在统一 decoder 下略优于 traditional Voxel Grid/Timestamp Image，但差距很小，说明传统事件表示仍然是强 baseline。汇报时应强调：传统方法不是弱对照，尤其在简单分类和 dense motion estimation 中很有竞争力；learning-based 方法的优势在更复杂分类任务中最明显，在本次 MVSEC 统一协议下体现为小幅领先。
+
+\end{document}

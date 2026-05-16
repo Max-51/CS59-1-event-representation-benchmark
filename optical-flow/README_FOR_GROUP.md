@@ -14,9 +14,9 @@ and the scripts needed to rerun the six local event-representation methods.
 - `configs/envs/`: per-method dependency lists.
 - `tests/`: synthetic tests for the pipeline and data handling.
 
-The old result tables, figures, and archived JSON/log artifacts were removed
-after a data/alignment issue was found. New result artifacts should be committed
-only after the corrected rerun is complete.
+The corrected float64/timestamp-aligned rerun completed on 2026-05-16. The
+current formal result artifacts are committed under
+`results_float64_cached_20260516/` and `logs_float64_cached_20260516/curves/`.
 
 ## Current Formal Protocol
 
@@ -41,6 +41,30 @@ only after the corrected rerun is complete.
 This is a unified downstream optical-flow benchmark / adapted reproduction, not
 a paper-identical rerun of every original optical-flow codebase.
 
+## Latest Results
+
+The latest MVSEC run used `mvsec_float64_delivery_20260516`, float64 event
+timestamps, timestamp-aligned event/flow windows, batch size 8, 100 epoch cap,
+and early-stop patience 10.
+
+| Group | Best method | AEE | Outlier % |
+| --- | --- | ---: | ---: |
+| Learning-based | EST | 2.0429 | 23.36 |
+| Traditional | Voxel Grid | 2.0759 | 23.85 |
+| Overall | EST | 2.0429 | 23.36 |
+
+Full result table:
+
+```text
+results_float64_cached_20260516/summary_all/mvsec_e100_earlystop_summary.md
+```
+
+Cross-task comparison report:
+
+```text
+../artifacts/traditional_baseline_analysis/20260516_float64/
+```
+
 ## Rerun Checks
 
 Run the alignment checker before the long benchmark:
@@ -59,6 +83,7 @@ Main run:
 
 ```bash
 DATA_ROOT=/path/to/processed/mvsec \
+METHOD_GROUP=all \
 OMP_NUM_THREADS=8 \
 BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
@@ -81,13 +106,15 @@ python scripts/build_mvsec_e100_outputs.py \
   --results-dir results \
   --curve-dir logs/curves \
   --summary-dir results/summary \
-  --figures-dir results/figures
+  --figures-dir results/figures \
+  --method-group all
 ```
 
-For traditional-only outputs, add:
+For traditional-only or learning-only outputs, use:
 
 ```bash
 --method-group traditional
+--method-group learning
 ```
 
 ## Most Important Entry Points

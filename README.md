@@ -42,6 +42,16 @@ the traditional N-MNIST and N-Caltech101 runs are available in:
 
 - `artifacts/traditional_classification/`
 
+The current MVSEC optical-flow rerun uses corrected float64 event timestamps and
+timestamp-aligned event/flow windows. Result tables and figures are available in:
+
+- `optical-flow/results_float64_cached_20260516/`
+- `optical-flow/logs_float64_cached_20260516/curves/`
+- `artifacts/traditional_baseline_analysis/20260516_float64/`
+
+In the 2026-05-16 MVSEC run, the best local method is EST with AEE 2.0429; the
+best traditional baseline is Voxel Grid with AEE 2.0759.
+
 ## Included Papers
 
 | Method | Paper | Venue | Year | Code |
