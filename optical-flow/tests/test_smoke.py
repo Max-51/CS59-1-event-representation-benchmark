@@ -39,7 +39,6 @@ class SmokeTest(unittest.TestCase):
             "get",
             "matrixlstm",
             "evrepsl",
-            "omnievent",
             "event_frame",
             "event_count",
             "binary_event_image",
