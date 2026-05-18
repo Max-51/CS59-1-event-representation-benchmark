@@ -37,6 +37,13 @@ DATASET_DEFAULTS = {
         "width"         : 34,
         "official_split": True,
     },
+    "cifar10dvs": {
+        "tonic_cls"     : "CIFAR10DVS",
+        "num_classes"   : 10,
+        "height"        : 128,
+        "width"         : 128,
+        "official_split": False,
+    },
 }
 
 
@@ -264,7 +271,7 @@ def run_training(args, model, train_loader, test_loader, device):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset",        default="ncaltech101",
-                        choices=["ncaltech101", "nmnist"])
+                        choices=["ncaltech101", "nmnist", "cifar10dvs"])
     parser.add_argument("--data_root",      required=True)
     parser.add_argument("--split_file",     default="data/splits/tonic_split_seed42.json")
     parser.add_argument("--checkpoint_dir", required=True)
