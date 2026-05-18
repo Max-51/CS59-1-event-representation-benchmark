@@ -18,6 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tonic
+import src.datasets.cifar10dvs_patch  # local .aedat loader
 from torch.utils.data import Dataset, DataLoader, Subset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
