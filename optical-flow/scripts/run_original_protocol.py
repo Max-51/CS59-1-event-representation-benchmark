@@ -22,6 +22,7 @@ def _load_sets(
     stride: int,
     alignment: str,
     max_windows_per_set: int | None,
+    timestamp_subwindows_per_flow: int,
     label: str,
 ) -> list:
     samples = []
@@ -39,6 +40,7 @@ def _load_sets(
             stride=stride,
             max_windows=max_windows_per_set,
             alignment=alignment,
+            timestamp_subwindows_per_flow=timestamp_subwindows_per_flow,
         )
         print(f"[load:{label}] pair {idx}/{len(pairs)} windows={len(loaded)}", flush=True)
         for sample in loaded:
@@ -80,6 +82,16 @@ def main() -> None:
     )
     parser.add_argument("--max-train-windows-per-set", type=int, default=None)
     parser.add_argument("--max-eval-windows-per-set", type=int, default=None)
+    parser.add_argument(
+        "--train-timestamp-subwindows-per-flow",
+        type=int,
+        default=1,
+        help=(
+            "Training-only timestamp densification. In timestamp alignment, split each "
+            "flow interval into this many event subwindows while keeping the same flow GT. "
+            "Evaluation always keeps one window per flow interval."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--base-channels", type=int, default=16)
@@ -140,6 +152,7 @@ def main() -> None:
         stride=args.stride,
         alignment=args.window_alignment,
         max_windows_per_set=args.max_train_windows_per_set,
+        timestamp_subwindows_per_flow=args.train_timestamp_subwindows_per_flow,
         label="train",
     )
     eval_samples = _load_sets(
@@ -148,6 +161,7 @@ def main() -> None:
         stride=args.stride,
         alignment=args.window_alignment,
         max_windows_per_set=args.max_eval_windows_per_set,
+        timestamp_subwindows_per_flow=1,
         label="eval",
     )
 
@@ -181,6 +195,7 @@ def main() -> None:
     result_dict["window_alignment"] = args.window_alignment
     result_dict["max_train_windows_per_set"] = args.max_train_windows_per_set
     result_dict["max_eval_windows_per_set"] = args.max_eval_windows_per_set
+    result_dict["train_timestamp_subwindows_per_flow"] = args.train_timestamp_subwindows_per_flow
     result_dict["progress_every"] = args.progress_every
     result_dict["early_stop_patience"] = args.early_stop_patience
     result_dict["early_stop_min_delta"] = args.early_stop_min_delta

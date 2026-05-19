@@ -141,6 +141,7 @@ def iter_event_windows(
     stride: int | None = None,
     max_windows: int | None = None,
     alignment: str = "auto",
+    timestamp_subwindows_per_flow: int = 1,
 ) -> Iterator[FlowWindowSample]:
     stride = window_size if stride is None else stride
     sensor_size = infer_sensor_size(events) if sensor_size is None else sensor_size
@@ -162,6 +163,7 @@ def iter_event_windows(
                 flow_timestamps=np.asarray(flow_timestamps, dtype=np.float64),
                 sensor_size=sensor_size,
                 max_windows=max_windows,
+                subwindows_per_flow=timestamp_subwindows_per_flow,
             )
             return
 
@@ -204,6 +206,7 @@ def _iter_timestamp_event_windows(
     flow_timestamps: np.ndarray,
     sensor_size: tuple[int, int],
     max_windows: int | None,
+    subwindows_per_flow: int = 1,
 ) -> Iterator[FlowWindowSample]:
     if len(flow_timestamps) != gt_flow.shape[0]:
         raise ValueError(
@@ -222,6 +225,7 @@ def _iter_timestamp_event_windows(
     positive_diffs = diffs[diffs > 0]
     first_dt = float(np.median(positive_diffs)) if positive_diffs.size else 0.0
     boundary_eps = max(1e-6, first_dt * 1e-6) if first_dt > 0 else 1e-6
+    subwindows_per_flow = max(1, int(subwindows_per_flow))
     n_yielded = 0
     for flow_idx, end_t in enumerate(flow_timestamps):
         if flow_idx == 0:
@@ -233,23 +237,35 @@ def _iter_timestamp_event_windows(
         end = int(np.searchsorted(event_t, float(end_t) + boundary_eps, side="right"))
         if end <= start:
             continue
+        interval_len = end - start
+        sub_count = min(subwindows_per_flow, interval_len)
+        for sub_idx in range(sub_count):
+            sub_start = start + (interval_len * sub_idx) // sub_count
+            sub_end = start + (interval_len * (sub_idx + 1)) // sub_count
+            if sub_end <= sub_start:
+                continue
 
-        yield FlowWindowSample(
-            events=events[start:end].astype(np.float64, copy=False),
-            gt_flow=np.asarray(gt_flow[flow_idx], dtype=np.float32),
-            sensor_size=sensor_size,
-            meta={
-                "alignment": "timestamp",
-                "window_index": n_yielded,
-                "flow_index": int(flow_idx),
-                "event_start": start,
-                "event_end": end,
-                "event_start_time": float(start_t),
-                "event_end_time": float(end_t),
-                "flow_timestamp": float(end_t),
-            },
-        )
-        n_yielded += 1
+            yield FlowWindowSample(
+                events=events[sub_start:sub_end].astype(np.float64, copy=False),
+                gt_flow=np.asarray(gt_flow[flow_idx], dtype=np.float32),
+                sensor_size=sensor_size,
+                meta={
+                    "alignment": "timestamp",
+                    "timestamp_subwindows_per_flow": subwindows_per_flow,
+                    "timestamp_subwindow_index": int(sub_idx),
+                    "timestamp_subwindow_count": int(sub_count),
+                    "window_index": n_yielded,
+                    "flow_index": int(flow_idx),
+                    "event_start": sub_start,
+                    "event_end": sub_end,
+                    "event_start_time": float(start_t),
+                    "event_end_time": float(end_t),
+                    "flow_timestamp": float(end_t),
+                },
+            )
+            n_yielded += 1
+            if max_windows is not None and n_yielded >= max_windows:
+                break
         if max_windows is not None and n_yielded >= max_windows:
             break
 
@@ -262,6 +278,7 @@ def load_mvsec_windows(
     stride: int | None = None,
     max_windows: int | None = None,
     alignment: str = "auto",
+    timestamp_subwindows_per_flow: int = 1,
 ) -> list[FlowWindowSample]:
     events = load_mvsec_events(h5_path)
     flow_data = load_mvsec_flow_data(flow_path)
@@ -278,5 +295,6 @@ def load_mvsec_windows(
             stride=stride,
             max_windows=max_windows,
             alignment=alignment,
+            timestamp_subwindows_per_flow=timestamp_subwindows_per_flow,
         )
     )

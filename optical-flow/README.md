@@ -26,6 +26,9 @@ downstream head.
   with invalid GT pixels excluded.
 - Event/flow pairing: timestamp-aligned event intervals from flow GT
   timestamps.
+- Optional training-density probe: `TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW` splits
+  only outdoor training intervals into multiple event subwindows. Indoor
+  evaluation remains one timestamp-aligned window per flow frame.
 - Data correction: event HDF5 timestamps must be stored with float64 precision.
   Older processed event `.h5` files written with float32 Unix timestamps are not
   suitable for the formal rerun.
@@ -92,6 +95,21 @@ OMP_NUM_THREADS=8 \
 BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
+
+To probe whether the small `train_windows=149` setting is the main bottleneck,
+run one learning method with densified outdoor training windows:
+
+```bash
+DATA_ROOT=/path/to/processed/mvsec \
+TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW=60 \
+VAL_WINDOWS=1000 \
+OMP_NUM_THREADS=8 \
+BATCH_SIZE=8 \
+bash scripts/run_mvsec_100e_all_early_stop.sh ergo
+```
+
+This is an adapted training-sample-density check, not a claim that each source
+paper used this exact training sampler.
 
 To rerun the traditional methods under the same timestamp-aligned protocol:
 

@@ -101,6 +101,42 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(windows[1].meta["flow_index"], 1)
             self.assertAlmostEqual(float(windows[2].meta["flow_timestamp"]), 2.0)
 
+    def test_timestamp_alignment_can_split_training_intervals(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import h5py
+            import numpy as np
+
+            root = Path(tmpdir)
+            h5_path = root / "events.h5"
+            flow_path = root / "flow.npz"
+            events = np.asarray(
+                [
+                    [1, 1, 0.0, 1],
+                    [2, 2, 0.1, 1],
+                    [3, 3, 0.2, 1],
+                    [4, 4, 0.3, 1],
+                    [5, 5, 0.4, 1],
+                    [6, 6, 0.5, 1],
+                ],
+                dtype=np.float64,
+            )
+            with h5py.File(h5_path, "w") as h5:
+                h5.create_dataset("events", data=events)
+            flow = np.zeros((2, 8, 8, 2), dtype=np.float32)
+            np.savez_compressed(flow_path, flow=flow, timestamps=np.asarray([0.3, 0.5], dtype=np.float64))
+
+            windows = load_mvsec_windows(
+                h5_path=h5_path,
+                flow_path=flow_path,
+                alignment="timestamp",
+                timestamp_subwindows_per_flow=2,
+            )
+            self.assertEqual(len(windows), 4)
+            self.assertEqual([int(w.meta["flow_index"]) for w in windows], [0, 0, 1, 1])
+            self.assertEqual([len(w.events) for w in windows], [1, 1, 1, 1])
+            self.assertEqual(windows[0].meta["timestamp_subwindow_count"], 2)
+            self.assertEqual(windows[1].meta["timestamp_subwindow_index"], 1)
+
     def test_timestamp_alignment_preserves_unix_second_precision(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             import h5py
