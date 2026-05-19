@@ -40,6 +40,7 @@ def _load_result(path: Path) -> dict[str, Any]:
         "eval_windows": int(data.get("eval_windows") or 0),
         "valid_count": int(data.get("valid_count") or 0),
         "window_alignment": str(data.get("window_alignment") or ""),
+        "metric_scope": str(data.get("metric_scope") or "event_valid"),
         "file": str(path.as_posix()),
     }
 
@@ -66,6 +67,7 @@ def _write_summary_csv(rows: list[dict[str, Any]], output: Path) -> None:
         "eval_windows",
         "valid_count",
         "window_alignment",
+        "metric_scope",
         "file",
     ]
     with output.open("w", newline="", encoding="utf-8") as f:
@@ -80,7 +82,7 @@ def _write_summary_md(rows: list[dict[str, Any]], output: Path) -> None:
         "",
         "Protocol: train on `outdoor_day1 + outdoor_day2`, evaluate on `indoor_flying1/2/3`, event input from extracted left-camera events, full generated GT flow frames, max 100 epochs, early-stop patience 10, block-random validation from outdoor train set, timestamp-aligned event/flow windows.",
         "",
-        "Lower is better for AEE and outlier percentage.",
+        "Metrics are event-valid AEE and KITTI-style outlier percentage: only pixels that fired at least one event in the corresponding event window are evaluated, with invalid GT pixels excluded. Lower is better.",
         "",
         "| Method | AEE | Outlier % | Non-outlier % | Epochs | Best epoch | Best val AEE | Train windows | Eval windows |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|",

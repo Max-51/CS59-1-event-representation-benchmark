@@ -21,7 +21,9 @@ downstream head.
 - Decoder: shared `EVFlowNetLike`.
 - Training protocol: max 100 epochs, batch size 8, early-stop patience 10.
 - Validation: block-random validation sampled from outdoor training windows.
-- Metrics: AEE/EPE and KITTI-style outlier percentage.
+- Metrics: event-valid AEE/EPE and KITTI-style outlier percentage. Only
+  pixels with at least one event in the corresponding event window are used,
+  with invalid GT pixels excluded.
 - Event/flow pairing: timestamp-aligned event intervals from flow GT
   timestamps.
 - Data correction: event HDF5 timestamps must be stored with float64 precision.
@@ -70,6 +72,7 @@ The formal 2026-05-16 run used:
 - method groups: learning (`ergo`, `est`, `event_pretraining`, `evrepsl`,
   `get`, `matrixlstm`) and traditional (`event_frame`, `binary_event_image`,
   `timestamp_image`, `time_surface`, `voxel_grid`)
+- official metric scope: event-valid / sparse optical-flow evaluation
 
 Before launching the long run, use `scripts/check_mvsec_alignment.py` to check
 that each event file covers the corresponding flow timestamps and that event
@@ -123,6 +126,7 @@ or `--method-group learning`.
 - Do not directly compare the local numbers as official-paper
   reproduction numbers, because several papers do not release the same
   optical-flow downstream code.
+- Report the formal table as event-valid AEE / Outlier, not full-frame AEE.
 - Treat `OmniEvent✳` as reported-only context, not as a local run in this
   pipeline.
 - Raw MVSEC data and processed `.h5` / `.npz` data are not committed to GitHub.
