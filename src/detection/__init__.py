@@ -1,13 +1,19 @@
-from src.detection.gen1_yolov6 import (
-    DEFAULT_GEN1_METHOD_CONFIGS,
-    Gen1YoloV6SampleBuilder,
+from src.detection.prophesee.benchmark import CachedYoloV6Dataset, PropheseeYoloV6Dataset
+from src.detection.prophesee.yolov6 import DEFAULT_PROPHESEE_METHOD_CONFIGS, PropheseeYoloV6SampleBuilder
+from src.detection.yolov6_common import (
+    DEFAULT_DETECTION_METHOD_CONFIGS,
     UnifiedRepresentationAdapter,
+    YoloV6SampleBuilder,
+    collate_yolov6_samples,
 )
-from src.detection.gen1_benchmark import Gen1YoloV6Dataset
 
 __all__ = [
-    "DEFAULT_GEN1_METHOD_CONFIGS",
-    "Gen1YoloV6Dataset",
-    "Gen1YoloV6SampleBuilder",
+    "CachedYoloV6Dataset",
+    "DEFAULT_DETECTION_METHOD_CONFIGS",
+    "DEFAULT_PROPHESEE_METHOD_CONFIGS",
+    "PropheseeYoloV6Dataset",
+    "PropheseeYoloV6SampleBuilder",
     "UnifiedRepresentationAdapter",
+    "YoloV6SampleBuilder",
+    "collate_yolov6_samples",
 ]

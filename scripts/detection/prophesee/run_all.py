@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_METHODS = [
     "ergo",
     "est",
@@ -65,7 +65,7 @@ def build_index_if_needed(args):
 
     command = [
         sys.executable,
-        "scripts/build_gen1_window_index.py",
+        "scripts/detection/prophesee/build_window_index.py",
         "--root",
         args.root,
         "--output-dir",
@@ -92,7 +92,7 @@ def train_method(args, method):
 
     command = [
         sys.executable,
-        "train_gen1_detection.py",
+        "scripts/detection/prophesee/train.py",
         "--root",
         args.root,
         "--method",
@@ -121,6 +121,12 @@ def train_method(args, method):
         str(args.weight_decay),
         "--device",
         args.device,
+        "--sensor-width",
+        str(args.sensor_width),
+        "--sensor-height",
+        str(args.sensor_height),
+        "--detector-channels",
+        str(args.detector_channels),
         "--early-stop-patience",
         str(args.early_stop_patience),
         "--early-stop-metric",
@@ -130,6 +136,10 @@ def train_method(args, method):
     ]
     if args.resume:
         command.append("--resume")
+    if args.cache_dir is not None:
+        command.extend(["--cache-dir", args.cache_dir])
+    if args.use_cache:
+        command.append("--use-cache")
     if args.train_limit is not None:
         command.extend(["--train-limit", str(args.train_limit)])
     if args.val_limit is not None:
@@ -145,7 +155,7 @@ def train_method(args, method):
 def summarize(args):
     command = [
         sys.executable,
-        "summarize_gen1_results.py",
+        "scripts/detection/prophesee/summarize.py",
         "--results-root",
         args.output_dir,
         "--output",
@@ -157,27 +167,32 @@ def summarize(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the full unified GEN1 benchmark for all selected methods.")
-    parser.add_argument("--root", required=True, help="GEN1 extracted dataset root")
-    parser.add_argument("--metadata-dir", default="metadata/gen1_windows")
-    parser.add_argument("--output-dir", default="outputs/benchmark")
-    parser.add_argument("--config", default="configs/yolov6n_gen1.py")
+    parser = argparse.ArgumentParser(description="Run Prophesee mini detection benchmark for selected methods.")
+    parser.add_argument("--root", required=True, help="Dataset root containing train/val/test")
+    parser.add_argument("--metadata-dir", default="metadata/prophesee_mini_windows")
+    parser.add_argument("--output-dir", default="outputs/prophesee_mini")
+    parser.add_argument("--config", default="configs/detection/yolov6n_prophesee.py")
     parser.add_argument("--methods", nargs="+", default=DEFAULT_METHODS)
     parser.add_argument("--window-us", type=int, default=50_000)
     parser.add_argument("--img-size", type=int, default=320)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--early-stop-patience", type=int, default=15)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--early-stop-patience", type=int, default=8)
     parser.add_argument("--early-stop-metric", default="map50_95", choices=["map50", "map50_95"])
     parser.add_argument("--min-delta", type=float, default=0.0)
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--momentum", type=float, default=0.937)
     parser.add_argument("--weight-decay", type=float, default=0.0005)
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--resume", action="store_true", help="Resume each method from checkpoints/last.pt when present")
-    parser.add_argument("--force", action="store_true", help="Run methods even if metrics.json already has test results")
-    parser.add_argument("--index-max-files", type=int, default=None, help="Optional cap per split for debug indexing")
+    parser.add_argument("--sensor-width", type=int, default=1280)
+    parser.add_argument("--sensor-height", type=int, default=720)
+    parser.add_argument("--detector-channels", type=int, default=12)
+    parser.add_argument("--cache-dir", default=None, help="Optional precomputed tensor cache root")
+    parser.add_argument("--use-cache", action="store_true", help="Train from cached tensors")
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--index-max-files", type=int, default=None)
     parser.add_argument("--train-limit", type=int, default=None)
     parser.add_argument("--val-limit", type=int, default=None)
     parser.add_argument("--test-limit", type=int, default=None)

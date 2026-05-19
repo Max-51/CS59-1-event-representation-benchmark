@@ -1,17 +1,12 @@
 import argparse
 import json
 from pathlib import Path
-import sys
-
-ROOT = Path(__file__).resolve().parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Summarize per-method GEN1 benchmark results.")
-    parser.add_argument("--results-root", default="outputs/benchmark")
-    parser.add_argument("--output", default="outputs/benchmark/summary.json")
+    parser = argparse.ArgumentParser(description="Summarize per-method detection benchmark results.")
+    parser.add_argument("--results-root", default="outputs/prophesee_mini")
+    parser.add_argument("--output", default="outputs/prophesee_mini/summary.json")
     args = parser.parse_args()
 
     results_root = Path(args.results_root)
@@ -20,6 +15,7 @@ def main():
         payload = json.loads(metrics_path.read_text(encoding="utf-8"))
         rows.append(
             {
+                "dataset": payload.get("dataset"),
                 "method": payload["method"],
                 "best_epoch": payload.get("best_epoch"),
                 "best_metric_name": payload.get("best_metric_name"),

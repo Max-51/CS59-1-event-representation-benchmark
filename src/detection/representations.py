@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from src.representations.traditional import (
     BinaryEventImageRepresentation,
@@ -46,7 +46,7 @@ def normalize_channels(chw):
     return out
 
 
-class ESTGen1Representation:
+class ESTDetectionRepresentation:
     def __init__(self, config):
         self.height = int(config.get("height", 240))
         self.width = int(config.get("width", 304))
@@ -73,7 +73,7 @@ class ESTGen1Representation:
         return normalize_channels(output)
 
 
-class ERGOGen1Representation:
+class ERGODetectionRepresentation:
     def __init__(self, config):
         self.height = int(config.get("height", 240))
         self.width = int(config.get("width", 304))
@@ -94,7 +94,7 @@ class ERGOGen1Representation:
         return normalize_channels(output)
 
 
-class EvRepSLGen1Representation:
+class EvRepSLDetectionRepresentation:
     def __init__(self, config):
         self.height = int(config.get("height", 240))
         self.width = int(config.get("width", 304))
@@ -116,7 +116,7 @@ class EvRepSLGen1Representation:
         return normalize_channels(output)
 
 
-class TokenGridGen1Representation:
+class TokenGridDetectionRepresentation:
     def __init__(self, config):
         self.height = int(config.get("height", 240))
         self.width = int(config.get("width", 304))
@@ -147,7 +147,7 @@ class TokenGridGen1Representation:
         return output.astype(np.float32)
 
 
-class MatrixLSTMGen1Representation:
+class MatrixLSTMDetectionRepresentation:
     def __init__(self, config):
         self.height = int(config.get("height", 240))
         self.width = int(config.get("width", 304))
@@ -178,7 +178,7 @@ class MatrixLSTMGen1Representation:
         return normalize_channels(output)
 
 
-class TraditionalGen1Representation:
+class TraditionalDetectionRepresentation:
     def __init__(self, representation_cls, config):
         self.representation = representation_cls(config)
 
@@ -189,28 +189,29 @@ class TraditionalGen1Representation:
         return np.asarray(tensor, dtype=np.float32)
 
 
-def create_gen1_representation(method, config):
+def create_detection_representation(method, config):
     method = method.lower()
     if method == "est":
-        return ESTGen1Representation(config)
+        return ESTDetectionRepresentation(config)
     if method == "ergo":
-        return ERGOGen1Representation(config)
+        return ERGODetectionRepresentation(config)
     if method == "evrepsl":
-        return EvRepSLGen1Representation(config)
+        return EvRepSLDetectionRepresentation(config)
     if method == "get":
-        return TokenGridGen1Representation(config)
+        return TokenGridDetectionRepresentation(config)
     if method == "event_pretraining":
-        return TokenGridGen1Representation(config)
+        return TokenGridDetectionRepresentation(config)
     if method == "matrix_lstm":
-        return MatrixLSTMGen1Representation(config)
+        return MatrixLSTMDetectionRepresentation(config)
     if method in ("event_frame", "event_count"):
-        return TraditionalGen1Representation(EventFrameRepresentation, config)
+        return TraditionalDetectionRepresentation(EventFrameRepresentation, config)
     if method == "binary_event_image":
-        return TraditionalGen1Representation(BinaryEventImageRepresentation, config)
+        return TraditionalDetectionRepresentation(BinaryEventImageRepresentation, config)
     if method == "timestamp_image":
-        return TraditionalGen1Representation(TimestampImageRepresentation, config)
+        return TraditionalDetectionRepresentation(TimestampImageRepresentation, config)
     if method == "time_surface":
-        return TraditionalGen1Representation(TimeSurfaceRepresentation, config)
+        return TraditionalDetectionRepresentation(TimeSurfaceRepresentation, config)
     if method == "voxel_grid":
-        return TraditionalGen1Representation(VoxelGridRepresentation, config)
-    raise KeyError(f"Unknown GEN1 representation method: {method}")
+        return TraditionalDetectionRepresentation(VoxelGridRepresentation, config)
+    raise KeyError(f"Unknown detection representation method: {method}")
+

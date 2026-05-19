@@ -1,50 +1,50 @@
-# Traditional Baseline 使用说明
+﻿# Traditional Baseline 浣跨敤璇存槑
 
-这份文档写给负责传统事件表示 baseline 的同学。目标是把传统方法接到和
-learning-based 方法相同的 benchmark 流程里，方便最后做公平对比。
+杩欎唤鏂囨。鍐欑粰璐熻矗浼犵粺浜嬩欢琛ㄧず baseline 鐨勫悓瀛︺€傜洰鏍囨槸鎶婁紶缁熸柟娉曟帴鍒板拰
+learning-based 鏂规硶鐩稿悓鐨?benchmark 娴佺▼閲岋紝鏂逛究鏈€鍚庡仛鍏钩瀵规瘮銆?
 
-## 现在支持哪些传统表示
+## 鐜板湪鏀寔鍝簺浼犵粺琛ㄧず
 
-当前已经实现了 5 类常用传统事件表示：
+褰撳墠宸茬粡瀹炵幇浜?5 绫诲父鐢ㄤ紶缁熶簨浠惰〃绀猴細
 
-| 方法名 | 含义 | 输出通道 |
+| 鏂规硶鍚?| 鍚箟 | 杈撳嚭閫氶亾 |
 |---|---|---:|
-| `event_frame` / `event_count` | 正负极性事件计数图 | 2 |
-| `binary_event_image` | 正负极性二值事件图，有事件就是 1 | 2 |
-| `timestamp_image` | 每个像素最近一次事件的归一化时间 | 2 |
-| `time_surface` | 指数衰减时间表面，表示事件有多“新” | 2 |
-| `voxel_grid` | 按时间分 bin 的体素网格，默认 5 个 bin | 10 |
+| `event_frame` / `event_count` | 姝ｈ礋鏋佹€т簨浠惰鏁板浘 | 2 |
+| `binary_event_image` | 姝ｈ礋鏋佹€т簩鍊间簨浠跺浘锛屾湁浜嬩欢灏辨槸 1 | 2 |
+| `timestamp_image` | 姣忎釜鍍忕礌鏈€杩戜竴娆′簨浠剁殑褰掍竴鍖栨椂闂?| 2 |
+| `time_surface` | 鎸囨暟琛板噺鏃堕棿琛ㄩ潰锛岃〃绀轰簨浠舵湁澶氣€滄柊鈥?| 2 |
+| `voxel_grid` | 鎸夋椂闂村垎 bin 鐨勪綋绱犵綉鏍硷紝榛樿 5 涓?bin | 10 |
 
-所有方法都使用同一个输入输出接口：
+鎵€鏈夋柟娉曢兘浣跨敤鍚屼竴涓緭鍏ヨ緭鍑烘帴鍙ｏ細
 
 ```text
-输入: events, shape = Nx4, columns = [x, y, t, p]
-输出: representation, shape = CxHxW, dtype = float32
+杈撳叆: events, shape = Nx4, columns = [x, y, t, p]
+杈撳嚭: representation, shape = CxHxW, dtype = float32
 ```
 
-通道顺序统一为：正极性在前，负极性在后。例如 `voxel_grid` 的前 5 个
-channel 是正极性时间 bin，后 5 个 channel 是负极性时间 bin。
+閫氶亾椤哄簭缁熶竴涓猴細姝ｆ瀬鎬у湪鍓嶏紝璐熸瀬鎬у湪鍚庛€備緥濡?`voxel_grid` 鐨勫墠 5 涓?
+channel 鏄鏋佹€ф椂闂?bin锛屽悗 5 涓?channel 鏄礋鏋佹€ф椂闂?bin銆?
 
-## 覆盖哪些任务
+## 瑕嗙洊鍝簺浠诲姟
 
-traditional baseline 计划覆盖 4 条线：
+traditional baseline 璁″垝瑕嗙洊 4 鏉＄嚎锛?
 
-| 数据集 | 任务 | 下游模型 |
+| 鏁版嵁闆?| 浠诲姟 | 涓嬫父妯″瀷 |
 |---|---|---|
-| N-MNIST | 分类 | ResNet18 |
-| N-Caltech101 | 分类 | ResNet18 |
-| GEN1 | 目标检测 | YOLOv6 |
-| MVSEC | 光流估计 | EV-FlowNet-like decoder |
+| N-MNIST | 鍒嗙被 | ResNet18 |
+| N-Caltech101 | 鍒嗙被 | ResNet18 |
+| GEN1 | 鐩爣妫€娴?| YOLOv6 |
+| MVSEC | 鍏夋祦浼拌 | EV-FlowNet-like decoder |
 
-目前代码已经完成这些接入：
+鐩墠浠ｇ爜宸茬粡瀹屾垚杩欎簺鎺ュ叆锛?
 
 - N-MNIST / N-Caltech101: `train_traditional_classification.py`
-- GEN1 detection: `train_gen1_detection.py --method <traditional_method>`
+- Prophesee mini detection: `scripts/detection/prophesee/train.py --method <traditional_method>`
 - MVSEC optical flow: `optical-flow/scripts/run_original_protocol.py --adapter <traditional_method>`
 
-## 跑实验前先检查环境
+## 璺戝疄楠屽墠鍏堟鏌ョ幆澧?
 
-在 GPU 机器上先检查 PyTorch 和 CUDA：
+鍦?GPU 鏈哄櫒涓婂厛妫€鏌?PyTorch 鍜?CUDA锛?
 
 ```bash
 python - <<'PY'
@@ -58,18 +58,18 @@ if torch.cuda.is_available():
 PY
 ```
 
-如果 `cuda` 是 `False`，先不要正式跑。需要换 PyTorch/CUDA 镜像，或者重新安装
-匹配 CUDA 版本的 `torch` 和 `torchvision`。
+濡傛灉 `cuda` 鏄?`False`锛屽厛涓嶈姝ｅ紡璺戙€傞渶瑕佹崲 PyTorch/CUDA 闀滃儚锛屾垨鑰呴噸鏂板畨瑁?
+鍖归厤 CUDA 鐗堟湰鐨?`torch` 鍜?`torchvision`銆?
 
-然后安装项目依赖：
+鐒跺悗瀹夎椤圭洰渚濊禆锛?
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 先跑测试，不要直接跑满 100 epoch
+## 鍏堣窇娴嬭瘯锛屼笉瑕佺洿鎺ヨ窇婊?100 epoch
 
-每次上新机器，先跑轻量测试：
+姣忔涓婃柊鏈哄櫒锛屽厛璺戣交閲忔祴璇曪細
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
@@ -80,12 +80,12 @@ python scripts/run_smoke.py
 cd ..
 ```
 
-如果本地或服务器没有安装 torch，部分 torch 相关测试会显示 `skipped`。这不代表
-traditional representation 出错，只是训练相关测试没有执行。
+濡傛灉鏈湴鎴栨湇鍔″櫒娌℃湁瀹夎 torch锛岄儴鍒?torch 鐩稿叧娴嬭瘯浼氭樉绀?`skipped`銆傝繖涓嶄唬琛?
+traditional representation 鍑洪敊锛屽彧鏄缁冪浉鍏虫祴璇曟病鏈夋墽琛屻€?
 
-## N-MNIST 分类 smoke test
+## N-MNIST 鍒嗙被 smoke test
 
-N-MNIST 比较小，最适合先检查训练闭环。第一次只跑 1 个 epoch 和少量样本：
+N-MNIST 姣旇緝灏忥紝鏈€閫傚悎鍏堟鏌ヨ缁冮棴鐜€傜涓€娆″彧璺?1 涓?epoch 鍜屽皯閲忔牱鏈細
 
 ```bash
 python train_traditional_classification.py \
@@ -102,21 +102,21 @@ python train_traditional_classification.py \
   --output-dir /mnt/outputs/traditional/classification/nmnist/event_frame_smoke
 ```
 
-这个命令的目的不是追求高准确率，而是检查：
+杩欎釜鍛戒护鐨勭洰鐨勪笉鏄拷姹傞珮鍑嗙‘鐜囷紝鑰屾槸妫€鏌ワ細
 
-- 数据能不能正常下载或读取
-- representation 能不能正常构建
-- ResNet18 能不能 forward/backward
-- loss 和 accuracy 是不是有限数值
-- checkpoint 和日志能不能正常保存
+- 鏁版嵁鑳戒笉鑳芥甯镐笅杞芥垨璇诲彇
+- representation 鑳戒笉鑳芥甯告瀯寤?
+- ResNet18 鑳戒笉鑳?forward/backward
+- loss 鍜?accuracy 鏄笉鏄湁闄愭暟鍊?
+- checkpoint 鍜屾棩蹇楄兘涓嶈兘姝ｅ父淇濆瓨
 
-跑完后检查输出目录：
+璺戝畬鍚庢鏌ヨ緭鍑虹洰褰曪細
 
 ```bash
 ls /mnt/outputs/traditional/classification/nmnist/event_frame_smoke
 ```
 
-应该能看到：
+搴旇鑳界湅鍒帮細
 
 ```text
 config.json
@@ -128,9 +128,9 @@ train.log
 checkpoints/
 ```
 
-## N-MNIST 正式 baseline
+## N-MNIST 姝ｅ紡 baseline
 
-smoke test 通过后，再跑 5 个方法：
+smoke test 閫氳繃鍚庯紝鍐嶈窇 5 涓柟娉曪細
 
 ```bash
 for method in event_frame binary_event_image timestamp_image time_surface voxel_grid; do
@@ -148,13 +148,13 @@ for method in event_frame binary_event_image timestamp_image time_surface voxel_
 done
 ```
 
-训练采用 `max 100 epochs + early stopping`。也就是说，不一定每个方法都会跑满
-100 轮；如果验证集长期不提升，会提前停止。最终报告应使用 best checkpoint 的
-test metric，而不是最后一轮的结果。
+璁粌閲囩敤 `max 100 epochs + early stopping`銆備篃灏辨槸璇达紝涓嶄竴瀹氭瘡涓柟娉曢兘浼氳窇婊?
+100 杞紱濡傛灉楠岃瘉闆嗛暱鏈熶笉鎻愬崌锛屼細鎻愬墠鍋滄銆傛渶缁堟姤鍛婂簲浣跨敤 best checkpoint 鐨?
+test metric锛岃€屼笉鏄渶鍚庝竴杞殑缁撴灉銆?
 
-## N-Caltech101 分类
+## N-Caltech101 鍒嗙被
 
-N-Caltech101 比 N-MNIST 更大，建议先跑 smoke test：
+N-Caltech101 姣?N-MNIST 鏇村ぇ锛屽缓璁厛璺?smoke test锛?
 
 ```bash
 python train_traditional_classification.py \
@@ -171,7 +171,7 @@ python train_traditional_classification.py \
   --output-dir /mnt/outputs/traditional/classification/ncaltech101/event_frame_smoke
 ```
 
-如果显存足够，再正式跑：
+濡傛灉鏄惧瓨瓒冲锛屽啀姝ｅ紡璺戯細
 
 ```bash
 for method in event_frame binary_event_image timestamp_image time_surface voxel_grid; do
@@ -189,39 +189,31 @@ for method in event_frame binary_event_image timestamp_image time_surface voxel_
 done
 ```
 
-如果遇到 CUDA OOM，把 `--batch-size 32` 改成 `16` 或 `8`。
+濡傛灉閬囧埌 CUDA OOM锛屾妸 `--batch-size 32` 鏀规垚 `16` 鎴?`8`銆?
 
-## GEN1 detection
+## Prophesee mini detection
 
-GEN1 检测更重，建议放在分类 baseline 跑通之后。先构建 window index：
-
-```bash
-python scripts/build_gen1_window_index.py \
-  --root /path/to/detection_dataset_duration_60s_ratio_1.0
-```
-
-然后先跑小规模 smoke test：
+The maintained object-detection pipeline now uses the Prophesee mini detection
+dataset. Build window metadata first, then run a small smoke test or the full
+six-method benchmark through the scripts under `scripts/detection/prophesee/`.
 
 ```bash
-python train_gen1_detection.py \
-  --root /path/to/detection_dataset_duration_60s_ratio_1.0 \
+python scripts/detection/prophesee/build_window_index.py \
+  --root /path/to/mini_dataset
+
+python scripts/detection/prophesee/train.py \
+  --root /path/to/mini_dataset \
   --method event_frame \
   --epochs 1 \
   --train-limit 32 \
   --val-limit 16 \
   --test-limit 16 \
-  --batch-size 4 \
-  --num-workers 0 \
-  --device cuda \
-  --output-dir outputs/debug/gen1_event_frame_smoke
+  --output-dir outputs/debug/prophesee_event_frame_smoke
 ```
-
-GEN1 依赖 YOLOv6 third-party 代码和数据路径，跑之前要确认 benchmark 组的检测
-环境已经配好。
 
 ## MVSEC optical flow
 
-MVSEC 的 traditional adapter 已经接入 `optical-flow`。先跑 mock smoke：
+MVSEC 鐨?traditional adapter 宸茬粡鎺ュ叆 `optical-flow`銆傚厛璺?mock smoke锛?
 
 ```bash
 cd optical-flow
@@ -229,7 +221,7 @@ python scripts/run_smoke.py
 python scripts/run_linear_benchmark.py --adapter event_frame --use-mock
 ```
 
-真实 MVSEC formal protocol 可以显式指定 adapter：
+鐪熷疄 MVSEC formal protocol 鍙互鏄惧紡鎸囧畾 adapter锛?
 
 ```bash
 python scripts/run_original_protocol.py \
@@ -240,49 +232,50 @@ python scripts/run_original_protocol.py \
   --device cuda
 ```
 
-具体真实数据路径和参数以 optical-flow 组当前文档为准。传统方法不要默认混进原有
-six-method learning-based suite；需要跑时显式指定 adapter。
+鍏蜂綋鐪熷疄鏁版嵁璺緞鍜屽弬鏁颁互 optical-flow 缁勫綋鍓嶆枃妗ｄ负鍑嗐€備紶缁熸柟娉曚笉瑕侀粯璁ゆ贩杩涘師鏈?
+six-method learning-based suite锛涢渶瑕佽窇鏃舵樉寮忔寚瀹?adapter銆?
 
-## 训练过程中要记录什么
+## 璁粌杩囩▼涓璁板綍浠€涔?
 
-每个 run 的输出目录里，重点看这些文件：
+姣忎釜 run 鐨勮緭鍑虹洰褰曢噷锛岄噸鐐圭湅杩欎簺鏂囦欢锛?
 
-| 文件 | 用途 |
+| 鏂囦欢 | 鐢ㄩ€?|
 |---|---|
-| `config.json` | 本次实验完整配置 |
-| `history.jsonl` | 每一轮 train/val 指标 |
-| `metrics.json` | 最终汇总结果 |
-| `progress.json` | 当前或最终进度 |
-| `representation_stats.json` | 表示张量统计，例如非零比例、构建时间 |
-| `train.log` | 人能直接读的训练日志 |
-| `checkpoints/best.pt` | 验证集最佳模型 |
-| `checkpoints/last.pt` | 最近一轮模型，方便 resume |
+| `config.json` | 鏈瀹為獙瀹屾暣閰嶇疆 |
+| `history.jsonl` | 姣忎竴杞?train/val 鎸囨爣 |
+| `metrics.json` | 鏈€缁堟眹鎬荤粨鏋?|
+| `progress.json` | 褰撳墠鎴栨渶缁堣繘搴?|
+| `representation_stats.json` | 琛ㄧず寮犻噺缁熻锛屼緥濡傞潪闆舵瘮渚嬨€佹瀯寤烘椂闂?|
+| `train.log` | 浜鸿兘鐩存帴璇荤殑璁粌鏃ュ織 |
+| `checkpoints/best.pt` | 楠岃瘉闆嗘渶浣虫ā鍨?|
+| `checkpoints/last.pt` | 鏈€杩戜竴杞ā鍨嬶紝鏂逛究 resume |
 
-写报告时建议记录：
+鍐欐姤鍛婃椂寤鸿璁板綍锛?
 
 - method
 - dataset
 - downstream model
 - best epoch
 - test accuracy / mAP / AEE
-- early stopping 是否触发
+- early stopping 鏄惁瑙﹀彂
 - representation shape
 - nonzero ratio
 - mean build time
 
-这样结果不是黑盒，后面可以解释为什么某个传统表示更快、更稀疏，或者准确率更高。
+杩欐牱缁撴灉涓嶆槸榛戠洅锛屽悗闈㈠彲浠ヨВ閲婁负浠€涔堟煇涓紶缁熻〃绀烘洿蹇€佹洿绋€鐤忥紝鎴栬€呭噯纭巼鏇撮珮銆?
 
-## 推荐执行顺序
+## 鎺ㄨ崘鎵ц椤哄簭
 
-最省钱、最稳的顺序是：
+鏈€鐪侀挶銆佹渶绋崇殑椤哄簭鏄細
 
 1. N-MNIST `event_frame` smoke test
-2. N-MNIST 五个方法正式跑
+2. N-MNIST 浜斾釜鏂规硶姝ｅ紡璺?
 3. N-Caltech101 `event_frame` smoke test
-4. N-Caltech101 五个方法正式跑
+4. N-Caltech101 浜斾釜鏂规硶姝ｅ紡璺?
 5. MVSEC mock smoke
 6. MVSEC formal protocol
-7. GEN1 detection smoke
-8. GEN1 detection formal run
+7. Prophesee mini detection smoke
+8. Prophesee mini detection formal run
 
-不要先跑 GEN1。它依赖重、显存和时间成本都更高，适合放在最后。
+涓嶈鍏堣窇 GEN1銆傚畠渚濊禆閲嶃€佹樉瀛樺拰鏃堕棿鎴愭湰閮芥洿楂橈紝閫傚悎鏀惧湪鏈€鍚庛€?
+

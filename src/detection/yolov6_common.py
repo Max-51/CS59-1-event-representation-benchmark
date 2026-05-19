@@ -2,11 +2,13 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from src.datasets.gen1_detection import GEN1_HEIGHT, GEN1_WIDTH, boxes_to_yolo_xywh
-from src.detection.gen1_representations import create_gen1_representation
+from src.detection.representations import create_detection_representation
 
 
-DEFAULT_GEN1_METHOD_CONFIGS = {
+DEFAULT_SENSOR_WIDTH = 1280
+DEFAULT_SENSOR_HEIGHT = 720
+
+DEFAULT_DETECTION_METHOD_CONFIGS = {
     "est": {"bins": 9},
     "ergo": {"variant": "event_stack", "stack_size": 12},
     "matrix_lstm": {"hidden_size": 12, "allow_fallback": True},
@@ -22,7 +24,20 @@ DEFAULT_GEN1_METHOD_CONFIGS = {
 }
 
 
-def _as_hwc(tensor, height=GEN1_HEIGHT, width=GEN1_WIDTH):
+def boxes_to_yolo_xywh(boxes_xywh, width, height):
+    if len(boxes_xywh) == 0:
+        return np.zeros((0, 5), dtype=np.float32)
+
+    labels = boxes_xywh.astype(np.float32).copy()
+    labels[:, 1] = (boxes_xywh[:, 1] + boxes_xywh[:, 3] * 0.5) / width
+    labels[:, 2] = (boxes_xywh[:, 2] + boxes_xywh[:, 4] * 0.5) / height
+    labels[:, 3] = boxes_xywh[:, 3] / width
+    labels[:, 4] = boxes_xywh[:, 4] / height
+    labels[:, 1:] = np.clip(labels[:, 1:], 0.0, 1.0)
+    return labels
+
+
+def _as_hwc(tensor, height=DEFAULT_SENSOR_HEIGHT, width=DEFAULT_SENSOR_WIDTH):
     arr = tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else np.asarray(tensor)
     arr = arr.astype(np.float32)
     if arr.ndim == 2:
@@ -116,14 +131,14 @@ def letterbox_yolo_labels(labels, original_hw, scale, pad, new_shape=640):
 
 
 class UnifiedRepresentationAdapter:
-    """Method adapter that returns image-like HWC float32 tensors for GEN1."""
+    """Method adapter that returns image-like HWC float32 tensors."""
 
     def __init__(
         self,
         method,
         config=None,
-        height=GEN1_HEIGHT,
-        width=GEN1_WIDTH,
+        height=DEFAULT_SENSOR_HEIGHT,
+        width=DEFAULT_SENSOR_WIDTH,
         detector_channels=12,
     ):
         base_config = {
@@ -132,13 +147,13 @@ class UnifiedRepresentationAdapter:
             "device": "cpu",
             "return_numpy": True,
         }
-        base_config.update(DEFAULT_GEN1_METHOD_CONFIGS.get(method, {}))
+        base_config.update(DEFAULT_DETECTION_METHOD_CONFIGS.get(method, {}))
         base_config.update(config or {})
         self.method = method
         self.height = height
         self.width = width
         self.detector_channels = detector_channels
-        self.representation = create_gen1_representation(method, base_config)
+        self.representation = create_detection_representation(method, base_config)
 
     def build_hwc(self, events):
         if len(events) == 0:
@@ -154,22 +169,40 @@ class UnifiedRepresentationAdapter:
         return adapt_channels(hwc, self.detector_channels)
 
 
-class Gen1YoloV6SampleBuilder:
-    """Build one YOLOv6-ready training sample from a unified GEN1 window."""
+class YoloV6SampleBuilder:
+    """Build one YOLOv6-ready training sample from a unified event window."""
 
-    def __init__(self, method, representation_config=None, img_size=640, detector_channels=12):
+    def __init__(
+        self,
+        method,
+        representation_config=None,
+        img_size=640,
+        detector_channels=12,
+        sensor_width=DEFAULT_SENSOR_WIDTH,
+        sensor_height=DEFAULT_SENSOR_HEIGHT,
+    ):
         self.img_size = img_size
+        self.sensor_width = int(sensor_width)
+        self.sensor_height = int(sensor_height)
         self.adapter = UnifiedRepresentationAdapter(
             method,
             representation_config,
+            height=self.sensor_height,
+            width=self.sensor_width,
             detector_channels=detector_channels,
         )
 
     def build(self, window):
         rep = self.adapter.build_detector_tensor(window.events)
         image, scale, pad = letterbox_hwc(rep, self.img_size)
-        labels = boxes_to_yolo_xywh(window.boxes)
-        labels = letterbox_yolo_labels(labels, (GEN1_HEIGHT, GEN1_WIDTH), scale, pad, self.img_size)
+        labels = boxes_to_yolo_xywh(window.boxes, width=self.sensor_width, height=self.sensor_height)
+        labels = letterbox_yolo_labels(
+            labels,
+            (self.sensor_height, self.sensor_width),
+            scale,
+            pad,
+            self.img_size,
+        )
 
         labels_out = torch.zeros((len(labels), 6), dtype=torch.float32)
         if len(labels):
@@ -181,7 +214,7 @@ class Gen1YoloV6SampleBuilder:
             "labels": labels_out,
             "recording_id": window.recording_id,
             "window": (window.window_start, window.window_end),
-            "original_shape": (GEN1_HEIGHT, GEN1_WIDTH),
+            "original_shape": (self.sensor_height, self.sensor_width),
             "resized_shape": tuple(image.shape[:2]),
         }
 

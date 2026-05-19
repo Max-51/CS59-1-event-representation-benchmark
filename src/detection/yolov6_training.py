@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torchvision
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 ROOT = Path(__file__).resolve().parents[2]
 YOLO_ROOT = ROOT / "third_party" / "ergo" / "ev-YOLOv6"
@@ -16,35 +16,7 @@ if str(YOLO_ROOT) not in sys.path:
 from yolov6.models.losses.loss import ComputeLoss
 from yolov6.models.yolo import build_model
 from yolov6.utils.config import Config
-from src.datasets.gen1_detection import GEN1_CLASSES, Gen1IndexedWindowDataset
-from src.detection.gen1_yolov6 import Gen1YoloV6SampleBuilder, collate_yolov6_samples
-
-
-class Gen1YoloV6Dataset(Dataset):
-    def __init__(
-        self,
-        index_path,
-        method,
-        root=None,
-        representation_config=None,
-        img_size=320,
-        detector_channels=12,
-        max_windows=None,
-    ):
-        self.base = Gen1IndexedWindowDataset(index_path, root=root)
-        self.limit = len(self.base) if max_windows is None else min(len(self.base), int(max_windows))
-        self.builder = Gen1YoloV6SampleBuilder(
-            method,
-            representation_config=representation_config,
-            img_size=img_size,
-            detector_channels=detector_channels,
-        )
-
-    def __len__(self):
-        return self.limit
-
-    def __getitem__(self, idx):
-        return self.builder.build(self.base[idx])
+from src.detection.yolov6_common import collate_yolov6_samples
 
 
 class DummyArgs:
@@ -309,8 +281,18 @@ def train_one_epoch(model, criterion, optimizer, dataloader, device, epoch_index
     }
 
 
-def evaluate_detection(model, criterion, dataloader, device, img_size, conf_thres=0.03, iou_thres=0.65):
+def evaluate_detection(
+    model,
+    criterion,
+    dataloader,
+    device,
+    img_size,
+    conf_thres=0.03,
+    iou_thres=0.65,
+    class_names=None,
+):
     model.eval()
+    class_names = tuple(class_names or ())
     iouv = torch.linspace(0.5, 0.95, 10, device=device)
     stats = []
     start = time.perf_counter()
@@ -379,12 +361,12 @@ def evaluate_detection(model, criterion, dataloader, device, img_size, conf_thre
     metric_payload["map50"] = round(float(ap50.mean()), 6)
     metric_payload["map50_95"] = round(float(ap5095.mean()), 6)
     metric_payload["per_class"] = {
-        GEN1_CLASSES[int(class_idx)]: {
+        class_names[int(class_idx)] if int(class_idx) < len(class_names) else str(int(class_idx)): {
             "ap50": round(float(ap50[row]), 6),
             "ap50_95": round(float(ap5095[row]), 6),
         }
         for row, class_idx in enumerate(ap_class.tolist())
-        if int(class_idx) < len(GEN1_CLASSES)
+        if int(class_idx) >= 0
     }
     return metric_payload
 

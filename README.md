@@ -1,26 +1,23 @@
-# Event Representation Benchmark (CS59)
+# Event Representation Benchmark
 
-## Overview
-This project focuses on benchmarking **learning-based event representations** for event camera data.
+This repository benchmarks event-camera representations across classification,
+optical flow, and object detection. It includes both learning-based
+representations and traditional event encodings under a shared experimental
+structure.
 
-## Currently Included Methods
-- EST  
-- ERGO  
-- GET  
-- Matrix-LSTM  
-- EvRepSL  
-- OmniEvent  
-- Event Pre-training  
+## Methods
 
-## Target Tasks
-- Classification  
-- Optical Flow  
-- Object Detection  
+Learning-based representations:
 
-## Traditional Baselines
+- EST
+- ERGO
+- GET
+- Matrix-LSTM
+- EvRepSL
+- OmniEvent
+- Event Pre-training
 
-The repository also includes traditional event-representation baselines for the
-survey/baseline track:
+Traditional representations:
 
 - Event frame / event count
 - Binary event image
@@ -28,110 +25,49 @@ survey/baseline track:
 - Time surface
 - Voxel grid
 
-These methods share a simple interface: `events -> C x H x W` float32 tensors.
-They are wired into N-MNIST / N-Caltech101 classification, GEN1 detection, and
-MVSEC optical flow adapters.
+## Tasks
 
-For a Chinese step-by-step guide, including smoke tests and recommended run
-order, see:
+- Classification on event-based recognition datasets
+- Optical flow on MVSEC
+- Object detection on the Prophesee mini detection dataset
 
-- `docs/traditional_baseline_guide_zh.md`
-- `docs/traditional_repo_index_zh.md` (repo-wide index for all traditional-method code/results paths)
+## Repository Layout
 
-Classification result tables, training histories, and quick-look figures for
-the traditional N-MNIST and N-Caltech101 runs are available in:
-
-- `artifacts/traditional_classification/`
-
-The current MVSEC optical-flow rerun uses corrected float64 event timestamps and
-timestamp-aligned event/flow windows. Result tables and figures are available in:
-
-- `optical-flow/results_float64_cached_20260516/`
-- `optical-flow/logs_float64_cached_20260516/curves/`
-- `artifacts/traditional_baseline_analysis/20260516_float64/`
-
-In the 2026-05-16 MVSEC run, the best local method is EST with AEE 2.0429; the
-best traditional baseline is Voxel Grid with AEE 2.0759.
-
-## Included Papers
-
-| Method | Paper | Venue | Year | Code |
-|--------|------|-------|------|------|
-| EST | [End-to-End Learning of Representations for Asynchronous Event-Based Data](https://arxiv.org/abs/1904.08245) | ICCV | 2019 | https://github.com/uzh-rpg/rpg_event_representation_learning |
-| ERGO | [From Chaos Comes Order: Ordering Event Representations for Object Recognition and Detection](https://arxiv.org/abs/2310.02642) | ICCV | 2023 | https://github.com/uzh-rpg/event_representation_study |
-| GET | [Group Event Transformer for Event-Based Vision](https://arxiv.org/abs/2304.13455) | ICCV | 2023 | https://github.com/Peterande/GET-Group-Event-Transformer |
-| Matrix-LSTM | [A Differentiable Recurrent Surface for Asynchronous Event-Based Data](https://arxiv.org/abs/2001.03455) | ECCV | 2020 | https://github.com/marcocannici/matrixlstm |
-| EvRepSL | [Event-stream Representation via Self-supervised Learning for Event-Based Vision](https://arxiv.org/abs/2412.07080) | TIP | 2024 | https://github.com/VincentQQu/EvRepSL |
-| OmniEvent | [OmniEvent: Unified Event Representation Learning](https://arxiv.org/abs/2508.01842) | AAAI | 2026 | - |
-| Event Pre-training | [Event Camera Data Pre-training](https://arxiv.org/abs/2301.01928) | ICCV | 2023 | https://github.com/Yan98/Event-Camera-Data-Pre-training |
-
-## Project Scope
-We focus on learning-based representations due to their flexibility, adaptability, and potential for end-to-end optimization.
-
-## Repository Structure
-
-- **data/**
-  - dataset organization
-
-- **docs/**
-  - documentation and paper summaries
-
-- **metadata/papers/**
-  - structured metadata for included papers
-
-- **src/**
-  - `datasets/` : dataset interfaces
-  - `representations/` : representation wrappers and registry
-  - `tasks/` : task interfaces
-
-- **third_party/**
-  - external reference implementations (Git submodules)
-
-- **Root Files**
-  - `.gitmodules` : submodule configuration
-  - `environment.yml` : environment setup (to be completed)
-  - `requirements.txt` : dependency list (placeholder)
-  - `run_benchmark.py` : benchmark entry script
-  - `test_registry.py` : registry testing script
-  - `test_evrepsl_local.py` : local EvRepSL testing script
-
-## GEN1 Detection Workflow
-
-The current training path is built around a unified preprocessing index:
-
-1. Build fixed 50 ms GEN1 window metadata once:
-
-```bash
-python scripts/build_gen1_window_index.py --root /path/to/detection_dataset_duration_60s_ratio_1.0
+```text
+src/
+  datasets/                 Dataset readers and indexed datasets
+  detection/                Detection adapters, YOLOv6 utilities, representations
+  representations/          Shared representation implementations
+  tasks/                    Task-level interfaces
+scripts/
+  detection/prophesee/      Prophesee detection indexing, caching, training, summary, plots
+configs/
+  detection/                Detection model configs
+docs/                       Run guides and project notes
+paper_overleaf/             Paper draft and AAAI template files
+optical-flow/               Optical-flow task code and outputs
+third_party/                External reference implementations
 ```
 
-2. Train one representation method at a time:
+## Object Detection
+
+The maintained detection pipeline now targets the compact Prophesee mini
+detection dataset. GEN1-specific detection entrypoints were removed to keep the
+server workflow smaller and easier to run.
+
+Minimal smoke test:
 
 ```bash
-python train_gen1_detection.py --root /path/to/detection_dataset_duration_60s_ratio_1.0 --method ergo
+python scripts/detection/prophesee/run_all.py --root /path/to/mini_dataset --methods ergo --epochs 1 --train-limit 8 --val-limit 4 --test-limit 4
 ```
 
-3. Or run the full six-method benchmark in one command:
+Full instructions, cached-tensor workflow, and visualization commands are in
+`docs/prophesee_mini_detection_guide_zh.md`.
 
-```bash
-python run_all_gen1_methods.py \
-  --root /path/to/detection_dataset_duration_60s_ratio_1.0 \
-  --methods ergo est evrepsl get event_pretraining matrix_lstm \
-  --epochs 100 \
-  --batch-size 32 \
-  --num-workers 4 \
-  --early-stop-patience 15 \
-  --early-stop-metric map50_95 \
-  --img-size 320 \
-  --lr 0.01 \
-  --device cuda \
-  --resume
-```
+Traditional baseline notes and repo-wide result indexes are in
+`docs/traditional_baseline_guide_zh.md` and `docs/traditional_repo_index_zh.md`.
 
-4. Summarize all finished method runs:
+## Notes
 
-```bash
-python summarize_gen1_results.py
-```
-
-This keeps preprocessing shared, avoids storing duplicated event windows, and writes per-method checkpoints, logs, progress files, and metrics under `outputs/benchmark/`. The full benchmark runner skips methods that already have test metrics unless `--force` is passed.
+Large datasets, checkpoints, caches, and generated outputs should stay outside
+Git unless explicitly documented as lightweight artifacts.
