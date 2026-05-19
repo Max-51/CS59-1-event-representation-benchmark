@@ -5,7 +5,9 @@ from pathlib import Path
 from train_traditional_classification import (
     RepresentationStats,
     build_label_mapping,
+    cifar10dvs_tebn_split,
     normalize_tonic_sample,
+    normalize_dataset_name,
     deterministic_train_test_split,
     load_split_file,
     split_train_val,
@@ -31,6 +33,20 @@ class TraditionalClassificationHelperTest(unittest.TestCase):
         self.assertEqual(len(test_a), 2)
         self.assertFalse(set(train_a) & set(test_a))
         self.assertEqual(sorted(train_a + test_a), list(range(10)))
+
+    def test_cifar10dvs_tebn_split_uses_first_100_per_class_for_test(self):
+        targets = [0] * 1000 + [1] * 1000
+        train, test = cifar10dvs_tebn_split(targets, test_per_class=100)
+        self.assertEqual(len(test), 200)
+        self.assertEqual(len(train), 1800)
+        self.assertEqual(test[:5], [0, 1, 2, 3, 4])
+        self.assertEqual(test[100:105], [1000, 1001, 1002, 1003, 1004])
+        self.assertFalse(set(train) & set(test))
+
+    def test_dataset_aliases_include_cifa_spelling(self):
+        self.assertEqual(normalize_dataset_name("cifa"), "cifar10dvs")
+        self.assertEqual(normalize_dataset_name("CIFAR10-DVS"), "cifar10dvs")
+        self.assertEqual(normalize_dataset_name("n-mnist"), "nmnist")
 
     def test_load_split_file_reads_int_indices(self):
         with tempfile.TemporaryDirectory() as tmpdir:

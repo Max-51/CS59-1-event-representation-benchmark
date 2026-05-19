@@ -1,0 +1,23 @@
+{
+  "stage": "completed",
+  "test": {
+    "loss": 2.024941,
+    "accuracy": 0.4395,
+    "samples": 2000,
+    "seconds": 9.27,
+    "representation": {
+      "samples": 2000,
+      "mean_events": 205026.5415,
+      "mean_build_seconds": 0.005757,
+      "mean_nonzero_ratio": 0.319083,
+      "mean_min": 0.0,
+      "mean_max": 1.0,
+      "mean_value": 0.040827,
+      "mean_std": 0.085251,
+      "shape_counts": {
+        "10x128x128": 2000
+      }
+    }
+  },
+  "best_epoch": 8
+}

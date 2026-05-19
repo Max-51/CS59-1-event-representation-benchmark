@@ -1,0 +1,39 @@
+{
+  "train_last_epoch": {
+    "samples": 8000,
+    "mean_events": 204255.3839,
+    "mean_build_seconds": 0.007841,
+    "mean_nonzero_ratio": 0.496447,
+    "mean_min": 0.0,
+    "mean_max": 1.0,
+    "mean_value": 0.332727,
+    "mean_std": 0.379149,
+    "shape_counts": {
+      "2x128x128": 8000
+    }
+  },
+  "val_last_epoch": {
+    "samples": 0,
+    "mean_events": 0.0,
+    "mean_build_seconds": 0.0,
+    "mean_nonzero_ratio": 0.0,
+    "mean_min": 0.0,
+    "mean_max": 0.0,
+    "mean_value": 0.0,
+    "mean_std": 0.0,
+    "shape_counts": {}
+  },
+  "test": {
+    "samples": 2000,
+    "mean_events": 205026.5415,
+    "mean_build_seconds": 0.004558,
+    "mean_nonzero_ratio": 0.497795,
+    "mean_min": 0.0,
+    "mean_max": 1.0,
+    "mean_value": 0.333718,
+    "mean_std": 0.379364,
+    "shape_counts": {
+      "2x128x128": 2000
+    }
+  }
+}

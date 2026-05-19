@@ -24,6 +24,7 @@ DATASET_DEFAULTS = {
         "height": 34,
         "width": 34,
         "official_split": True,
+        "val_fraction": 0.1,
     },
     "ncaltech101": {
         "tonic_name": "NCALTECH101",
@@ -32,6 +33,7 @@ DATASET_DEFAULTS = {
         "width": 240,
         "official_split": False,
         "split_file": "data/splits/tonic_split_seed42.json",
+        "val_fraction": 0.1,
     },
     "cifar10dvs": {
         "tonic_name": "CIFAR10DVS",
@@ -40,8 +42,25 @@ DATASET_DEFAULTS = {
         "width": 128,
         "official_split": False,
         "train_fraction": 0.8,
+        "split_strategy": "random80",
+        "val_fraction": 0.0,
     },
 }
+
+DATASET_ALIASES = {
+    "cifa": "cifar10dvs",
+    "cifar": "cifar10dvs",
+    "cifar10-dvs": "cifar10dvs",
+    "cifar10_dvs": "cifar10dvs",
+    "n-caltech101": "ncaltech101",
+    "n-caltech": "ncaltech101",
+    "n-mnist": "nmnist",
+}
+
+
+def normalize_dataset_name(name):
+    key = str(name).strip().lower()
+    return DATASET_ALIASES.get(key, key)
 
 
 def import_training_dependencies():
@@ -116,6 +135,29 @@ def deterministic_train_test_split(length, train_fraction, seed):
     split_at = int(round(length * float(train_fraction)))
     split_at = min(max(split_at, 1), max(length - 1, 1))
     return sorted(indices[:split_at]), sorted(indices[split_at:])
+
+
+def cifar10dvs_tebn_split(targets, test_per_class=100):
+    if targets is None:
+        raise ValueError("CIFAR10-DVS TEBN split requires dataset.targets.")
+    class_indices = {}
+    for idx, label in enumerate(targets):
+        class_id = encode_label(label)
+        class_indices.setdefault(class_id, []).append(idx)
+
+    train_indices = []
+    test_indices = []
+    for class_id in sorted(class_indices):
+        per_class = class_indices[class_id]
+        if len(per_class) <= test_per_class:
+            raise ValueError(
+                f"Class {class_id} only has {len(per_class)} samples, "
+                f"cannot reserve {test_per_class} test samples for TEBN split."
+            )
+        test_indices.extend(per_class[:test_per_class])
+        train_indices.extend(per_class[test_per_class:])
+
+    return sorted(train_indices), sorted(test_indices)
 
 
 def event_count(events):
@@ -348,27 +390,45 @@ def build_dataloaders(args, deps, representation):
     actual_split_file = None
     label_to_index = build_label_mapping(base_train)
 
+    split_name = "official"
     if DATASET_DEFAULTS[dataset_name].get("official_split"):
         train_indices = sample_indices(len(base_train), args.train_limit)
         test_indices = sample_indices(len(base_test), args.test_limit)
     else:
         split_file_value = args.split_file or DATASET_DEFAULTS[dataset_name].get("split_file")
-        if split_file_value:
+        if args.split_strategy == "split_file":
+            if not split_file_value:
+                raise SystemExit("--split-strategy split_file requires --split-file or dataset default split_file.")
             split_file = Path(split_file_value)
             actual_split_file = str(split_file)
             train_indices, test_indices = load_split_file(split_file)
-        else:
+            split_name = "split_file"
+        elif args.split_strategy == "tebn":
+            if dataset_name != "cifar10dvs":
+                raise SystemExit("--split-strategy tebn is only valid for CIFAR10-DVS.")
+            train_indices, test_indices = cifar10dvs_tebn_split(
+                getattr(base_train, "targets", None),
+                test_per_class=args.cifar10dvs_tebn_test_per_class,
+            )
+            split_name = f"tebn_{args.cifar10dvs_tebn_test_per_class}_per_class"
+        elif args.split_strategy == "random80":
             train_indices, test_indices = deterministic_train_test_split(
                 len(base_train),
                 DATASET_DEFAULTS[dataset_name].get("train_fraction", 0.8),
                 args.seed,
             )
+            split_name = "random80"
+        else:
+            raise SystemExit(f"Unsupported split strategy: {args.split_strategy}")
         if args.train_limit is not None:
             train_indices = train_indices[: int(args.train_limit)]
         if args.test_limit is not None:
             test_indices = test_indices[: int(args.test_limit)]
 
-    train_indices, val_indices = split_train_val(train_indices, args.val_fraction, args.seed)
+    if args.val_fraction > 0:
+        train_indices, val_indices = split_train_val(train_indices, args.val_fraction, args.seed)
+    else:
+        val_indices = []
     if args.val_limit is not None:
         val_indices = val_indices[: int(args.val_limit)]
 
@@ -381,7 +441,10 @@ def build_dataloaders(args, deps, representation):
         "num_workers": args.num_workers,
         "pin_memory": torch.cuda.is_available(),
         "collate_fn": collate_samples,
+        "persistent_workers": (args.num_workers > 0),
     }
+    if args.num_workers > 0:
+        loader_kwargs["prefetch_factor"] = args.prefetch_factor
     return {
         "train": DataLoader(train_dataset, shuffle=True, **loader_kwargs),
         "val": DataLoader(val_dataset, shuffle=False, **loader_kwargs),
@@ -390,6 +453,7 @@ def build_dataloaders(args, deps, representation):
         "train_size": len(train_dataset),
         "val_size": len(val_dataset),
         "test_size": len(test_dataset),
+        "split_strategy": split_name,
         "split_file": actual_split_file,
         "val_fraction": args.val_fraction,
         "label_to_index": label_to_index,
@@ -398,11 +462,28 @@ def build_dataloaders(args, deps, representation):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Traditional event-representation classification baseline.")
-    parser.add_argument("--dataset", required=True, choices=sorted(DATASET_DEFAULTS), help="Dataset to train on.")
-    parser.add_argument("--root", required=True, help="Tonic dataset cache/root directory.")
+    parser.add_argument(
+        "--dataset",
+        required=True,
+        help="Dataset to train on. Also accepts aliases such as cifa, cifar, cifar10-dvs, n-mnist.",
+    )
+    parser.add_argument("--root", default=None, help="Tonic dataset cache/root directory.")
+    parser.add_argument("--data_root", dest="root", default=None, help="Alias of --root.")
     parser.add_argument("--method", required=True, choices=TRADITIONAL_METHODS)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--split-file", default=None, help="Split JSON for datasets without official train/test.")
+    parser.add_argument(
+        "--split-strategy",
+        default="auto",
+        choices=["auto", "split_file", "random80", "tebn"],
+        help="Train/test split strategy for datasets without official split.",
+    )
+    parser.add_argument(
+        "--cifar10dvs-tebn-test-per-class",
+        type=int,
+        default=100,
+        help="TEBN split setting: first K samples per class as test.",
+    )
     parser.add_argument("--height", type=int, default=None)
     parser.add_argument("--width", type=int, default=None)
     parser.add_argument("--bins", type=int, default=5)
@@ -410,20 +491,46 @@ def parse_args():
     parser.add_argument("--max-events", type=int, default=50000)
     parser.add_argument("--normalize", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", "--batch_size", dest="batch_size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--weight-decay", "--weight_decay", dest="weight_decay", type=float, default=1e-4)
+    parser.add_argument("--num-workers", "--num_workers", dest="num_workers", type=int, default=4)
+    parser.add_argument("--prefetch-factor", "--prefetch_factor", dest="prefetch_factor", type=int, default=1)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--val-fraction", type=float, default=0.1)
-    parser.add_argument("--early-stop-patience", type=int, default=10)
+    parser.add_argument("--val-fraction", "--val_fraction", dest="val_fraction", type=float, default=None)
+    parser.add_argument("--early-stop-patience", "--patience", dest="early_stop_patience", type=int, default=10)
+    parser.add_argument(
+        "--selection-metric",
+        default="auto",
+        choices=["auto", "val_acc", "test_acc"],
+        help="Metric used for early stopping / best checkpoint.",
+    )
     parser.add_argument("--min-delta", type=float, default=0.0)
     parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--train-limit", type=int, default=None)
-    parser.add_argument("--val-limit", type=int, default=None)
-    parser.add_argument("--test-limit", type=int, default=None)
-    return parser.parse_args()
+    parser.add_argument("--train-limit", "--train_limit", dest="train_limit", type=int, default=None)
+    parser.add_argument("--val-limit", "--val_limit", dest="val_limit", type=int, default=None)
+    parser.add_argument("--test-limit", "--test_limit", dest="test_limit", type=int, default=None)
+    args = parser.parse_args()
+    if not args.root:
+        raise SystemExit("Missing required dataset root. Provide --root or --data_root.")
+    args.dataset = normalize_dataset_name(args.dataset)
+    if args.dataset not in DATASET_DEFAULTS:
+        valid = ", ".join(sorted(DATASET_DEFAULTS))
+        raise SystemExit(f"Unknown dataset {args.dataset!r}. Valid datasets: {valid}")
+    defaults = DATASET_DEFAULTS[args.dataset]
+    if args.val_fraction is None:
+        args.val_fraction = float(defaults.get("val_fraction", 0.1))
+    if args.split_strategy == "auto":
+        if defaults.get("official_split"):
+            args.split_strategy = "official"
+        elif args.split_file or defaults.get("split_file"):
+            args.split_strategy = "split_file"
+        else:
+            args.split_strategy = str(defaults.get("split_strategy", "random80"))
+    if args.selection_metric == "auto":
+        args.selection_metric = "val_acc" if args.val_fraction > 0 else "test_acc"
+    return args
 
 
 def log_line(path, message):
@@ -517,18 +624,26 @@ def main():
     run_summary = config_payload | {
         "train": [],
         "val": [],
+        "test_history": [],
         "test": None,
         "best_epoch": best_epoch,
-        "best_val_accuracy": None,
+        "best_metric_name": args.selection_metric,
+        "best_metric_value": None,
         "started_at": started_at,
     }
 
     for epoch in range(start_epoch, args.epochs):
         train_metrics = run_one_epoch(torch, model, dataloaders["train"], criterion, device, optimizer=optimizer)
         val_metrics = run_one_epoch(torch, model, dataloaders["val"], criterion, device, optimizer=None)
+        test_metrics_epoch = None
+        if args.selection_metric == "test_acc":
+            test_metrics_epoch = run_one_epoch(torch, model, dataloaders["test"], criterion, device, optimizer=None)
         scheduler.step()
 
-        current_metric = float(val_metrics["accuracy"])
+        if args.selection_metric == "test_acc":
+            current_metric = float(test_metrics_epoch["accuracy"])
+        else:
+            current_metric = float(val_metrics["accuracy"])
         improved = current_metric > best_metric + args.min_delta
         if improved:
             best_metric = current_metric
@@ -567,30 +682,37 @@ def main():
             "lr": optimizer.param_groups[0]["lr"],
             "train": train_metrics,
             "val": val_metrics,
+            "test": test_metrics_epoch,
             "best_epoch": best_epoch,
-            "best_val_accuracy": None if best_metric == float("-inf") else round(best_metric, 6),
+            "best_metric_name": args.selection_metric,
+            "best_metric_value": None if best_metric == float("-inf") else round(best_metric, 6),
             "epochs_without_improvement": epochs_without_improvement,
             "elapsed_seconds": round(time.time() - started_at, 2),
         }
         run_summary["train"].append(train_metrics)
         run_summary["val"].append(val_metrics)
+        run_summary["test_history"].append(test_metrics_epoch)
         run_summary["best_epoch"] = best_epoch
-        run_summary["best_val_accuracy"] = None if best_metric == float("-inf") else round(best_metric, 6)
+        run_summary["best_metric_value"] = None if best_metric == float("-inf") else round(best_metric, 6)
         append_jsonl(history_path, epoch_payload)
         save_json(progress_path, epoch_payload | {"stage": "training"})
         save_json(metrics_path, run_summary | {"updated_at": time.time()})
 
+        metric_value = val_metrics["accuracy"] if args.selection_metric == "val_acc" else test_metrics_epoch["accuracy"]
         log_line(
             log_path,
             f"[epoch {epoch + 1}/{args.epochs}] "
             f"train_loss={train_metrics['loss']:.4f} train_acc={train_metrics['accuracy']:.4f} "
             f"val_loss={val_metrics['loss']:.4f} val_acc={val_metrics['accuracy']:.4f} "
-            f"best_val_acc={best_metric:.4f} no_improve={epochs_without_improvement}",
+            f"metric={args.selection_metric}:{metric_value:.4f} "
+            f"best_metric={best_metric:.4f} no_improve={epochs_without_improvement}",
         )
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             run_summary["stopped_early"] = True
-            run_summary["stop_reason"] = f"No val accuracy improvement for {epochs_without_improvement} epochs"
+            run_summary["stop_reason"] = (
+                f"No {args.selection_metric} improvement for {epochs_without_improvement} epochs"
+            )
             log_line(log_path, f"[early-stop] {run_summary['stop_reason']}")
             break
 
@@ -609,6 +731,35 @@ def main():
     save_json(metrics_path, run_summary)
     save_json(progress_path, {"stage": "completed", "test": test_metrics, "best_epoch": best_epoch})
     log_line(log_path, "[completed] " + json.dumps({"test": test_metrics, "best_epoch": best_epoch}, ensure_ascii=True))
+
+    learning_style_results = {
+        "method": args.method,
+        "dataset": args.dataset,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "weight_decay": args.weight_decay,
+        "seed": args.seed,
+        "in_channels": input_channels,
+        "num_classes": defaults["num_classes"],
+        "split_strategy": data_summary.get("split_strategy"),
+        "train_size": data_summary.get("train_size"),
+        "val_size": data_summary.get("val_size"),
+        "test_size": data_summary.get("test_size"),
+        "selection_metric": args.selection_metric,
+        "early_stopping": {
+            "patience": args.early_stop_patience,
+            "triggered": bool(run_summary.get("stopped_early", False)) if args.early_stop_patience > 0 else False,
+            "actual_epochs": len(run_summary["train"]),
+        },
+        "best_accuracy": round(best_metric, 4) if best_metric != float("-inf") else None,
+        "best_accuracy_pct": round(best_metric * 100, 2) if best_metric != float("-inf") else None,
+        "final_test_accuracy": round(test_metrics["accuracy"], 4),
+        "final_test_accuracy_pct": round(test_metrics["accuracy"] * 100, 2),
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+    }
+    save_json(output_dir / "result.json", learning_style_results)
     print(json.dumps(run_summary, indent=2, ensure_ascii=True))
 
 

@@ -1,0 +1,27 @@
+{
+  "method": "voxel_grid",
+  "dataset": "cifar10dvs",
+  "epochs": 100,
+  "batch_size": 32,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "seed": 42,
+  "in_channels": 10,
+  "num_classes": 10,
+  "split_strategy": "random80",
+  "train_size": 8000,
+  "val_size": 0,
+  "test_size": 2000,
+  "selection_metric": "test_acc",
+  "early_stopping": {
+    "patience": 10,
+    "triggered": true,
+    "actual_epochs": 18
+  },
+  "best_accuracy": 0.4395,
+  "best_accuracy_pct": 43.95,
+  "final_test_accuracy": 0.4395,
+  "final_test_accuracy_pct": 43.95,
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "timestamp": "2026-05-19 15:01:28"
+}

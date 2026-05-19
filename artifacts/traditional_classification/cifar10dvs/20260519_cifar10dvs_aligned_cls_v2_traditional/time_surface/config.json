@@ -1,0 +1,47 @@
+{
+  "dataset": "cifar10dvs",
+  "method": "time_surface",
+  "command": "train_traditional_classification.py --dataset cifa --data_root /mnt/datasets --method time_surface --split-strategy random80 --selection-metric test_acc --val-fraction 0 --epochs 100 --batch_size 32 --lr 1e-4 --weight_decay 1e-4 --num_workers 4 --prefetch_factor 1 --patience 10 --max-events 50000 --seed 42 --device cuda --resume --output-dir /mnt/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls_v2_traditional/time_surface",
+  "root": "/mnt/datasets",
+  "dataset_defaults": {
+    "tonic_name": "CIFAR10DVS",
+    "num_classes": 10,
+    "height": 128,
+    "width": 128,
+    "official_split": false,
+    "train_fraction": 0.8,
+    "split_strategy": "random80",
+    "val_fraction": 0.0
+  },
+  "data": {
+    "train_size": 8000,
+    "val_size": 0,
+    "test_size": 2000,
+    "split_strategy": "random80",
+    "split_file": null,
+    "val_fraction": 0.0,
+    "label_to_index": null
+  },
+  "representation": {
+    "height": 128,
+    "width": 128,
+    "bins": 5,
+    "num_bins": 5,
+    "tau_us": null,
+    "max_events": 50000,
+    "normalize": true,
+    "input_channels": 2
+  },
+  "training": {
+    "epochs": 100,
+    "batch_size": 32,
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "num_workers": 4,
+    "device": "cuda",
+    "seed": 42,
+    "early_stop_patience": 10,
+    "min_delta": 0.0,
+    "downstream_model": "ResNet18"
+  }
+}

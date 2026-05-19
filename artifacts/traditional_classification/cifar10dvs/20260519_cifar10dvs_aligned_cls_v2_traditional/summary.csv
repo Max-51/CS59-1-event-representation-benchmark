@@ -1,0 +1,6 @@
+method,best_accuracy_pct,final_test_accuracy_pct,actual_epochs,early_stop_triggered,split_strategy,train_size,test_size,gpu
+event_frame,44.95,44.95,18,true,random80,8000,2000,NVIDIA GeForce RTX 4090
+binary_event_image,39.85,39.85,21,true,random80,8000,2000,NVIDIA GeForce RTX 4090
+timestamp_image,41.65,41.65,16,true,random80,8000,2000,NVIDIA GeForce RTX 4090
+time_surface,43.30,43.30,15,true,random80,8000,2000,NVIDIA GeForce RTX 4090
+voxel_grid,43.95,43.95,18,true,random80,8000,2000,NVIDIA GeForce RTX 4090
