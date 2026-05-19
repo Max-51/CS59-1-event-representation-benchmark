@@ -1,0 +1,19 @@
+dataset,group,method,accuracy_pct,source,note
+ncaltech101,Learning-based,EST adaptation,70.44,results/classification/est/est_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,EvRepSL,64.81,results/classification/evrepsl/evrepsl_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,EST End-to-End,64.29,results/classification/est/est_e2e_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,Event Pre-training,64.12,results/classification/event_pretraining/event_pretraining_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,EventOrdering,58.73,results/classification/ergo/ergo_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,GET,56.7164,results/classification/get/get_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Learning-based,Matrix-LSTM,53.16,results/classification/matrix_lstm/matrix_lstm_ncaltech101.json,Repository learning-based classification result
+ncaltech101,Traditional,Timestamp Image,52.9277,ncaltech101_traditional_records.tar.gz,ResNet18 traditional baseline
+ncaltech101,Traditional,Time Surface,51.7796,ncaltech101_traditional_records.tar.gz,ResNet18 traditional baseline
+ncaltech101,Traditional,Event Frame,49.6556,ncaltech101_traditional_records.tar.gz,ResNet18 traditional baseline
+ncaltech101,Traditional,Voxel Grid,49.6556,ncaltech101_traditional_records.tar.gz,ResNet18 traditional baseline
+ncaltech101,Traditional,Binary Event Image,48.6797,ncaltech101_traditional_records.tar.gz,ResNet18 traditional baseline
+nmnist,Learning-based,EvRepSL,98.81,results/classification/evrepsl/evrepsl_nmnist.json,Repository learning-based classification result
+nmnist,Traditional,Voxel Grid,99.08,nmnist_traditional_records.tar.gz,ResNet18 traditional baseline
+nmnist,Traditional,Time Surface,98.63,nmnist_traditional_records.tar.gz,ResNet18 traditional baseline
+nmnist,Traditional,Event Frame,98.28,nmnist_traditional_records.tar.gz,ResNet18 traditional baseline
+nmnist,Traditional,Timestamp Image,98.05,nmnist_traditional_records.tar.gz,ResNet18 traditional baseline
+nmnist,Traditional,Binary Event Image,95.06,nmnist_traditional_records.tar.gz,ResNet18 traditional baseline

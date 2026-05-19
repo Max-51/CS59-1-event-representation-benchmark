@@ -1,0 +1,28 @@
+{
+  "method": "est",
+  "dataset": "nmnist",
+  "epochs": 1,
+  "batch_size": 16,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "seed": 42,
+  "in_channels": 10,
+  "num_classes": 10,
+  "early_stopping": {
+    "patience": 0,
+    "triggered": false,
+    "actual_epochs": 1
+  },
+  "best_test_accuracy": 0.8438,
+  "best_test_accuracy_pct": 84.38,
+  "gpu": "CPU",
+  "train_history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.761349,
+      "train_acc": 0.3594,
+      "test_acc": 0.8438
+    }
+  ],
+  "timestamp": "2026-05-08 15:18:19"
+}

@@ -1,0 +1,13 @@
+group,method,best_test_accuracy_pct,epochs_actual,early_stop_triggered,source
+learning,est,57.45,43,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/est/est_cifar10dvs.json
+learning,event_pretraining,55.75,38,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/event_pretraining/event_pretraining_cifar10dvs.json
+learning,matrix_lstm,55.2,30,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/matrix_lstm/matrix_lstm_cifar10dvs.json
+learning,get,54.1,18,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/get/get_cifar10dvs.json
+learning,omnievent,53.95,19,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/omnievent/omnievent_cifar10dvs.json
+learning,evrepsl,52.4,18,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/evrepsl/evrepsl_cifar10dvs.json
+learning,ergo,45.9,22,True,/mnt/CS59-1-event-representation-benchmark/outputs/learning_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/results/ergo/ergo_cifar10dvs.json
+traditional,event_frame,41.95,16,True,/mnt/CS59-1-event-representation-benchmark/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/event_frame/metrics.json
+traditional,time_surface,41.1,18,True,/mnt/CS59-1-event-representation-benchmark/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/time_surface/metrics.json
+traditional,timestamp_image,40.85,51,True,/mnt/CS59-1-event-representation-benchmark/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/timestamp_image/metrics.json
+traditional,voxel_grid,39.35,14,True,/mnt/CS59-1-event-representation-benchmark/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/voxel_grid/metrics.json
+traditional,binary_event_image,36.8,29,True,/mnt/CS59-1-event-representation-benchmark/outputs/traditional/classification/cifar10dvs/20260519_cifar10dvs_aligned_cls/binary_event_image/metrics.json

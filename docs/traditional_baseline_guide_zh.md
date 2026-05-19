@@ -38,9 +38,9 @@ traditional baseline 计划覆盖 4 条线：
 
 目前代码已经完成这些接入：
 
-- N-MNIST / N-Caltech101: `train_traditional_classification.py`
-- GEN1 detection: `train_gen1_detection.py --method <traditional_method>`
-- MVSEC optical flow: `optical-flow/scripts/run_original_protocol.py --adapter <traditional_method>`
+- N-MNIST / N-Caltech101: `tasks/classification/scripts/train_traditional_classification.py`
+- GEN1 detection: `tasks/detection/scripts/train_gen1_detection.py --method <traditional_method>`
+- MVSEC optical flow: `tasks/optical_flow/scripts/run_original_protocol.py --adapter <traditional_method>`
 
 ## 跑实验前先检查环境
 
@@ -74,7 +74,7 @@ pip install -r requirements.txt
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
 
-cd optical-flow
+cd tasks/optical_flow
 python -m unittest discover -s tests -p "test_*.py" -v
 python scripts/run_smoke.py
 cd ..
@@ -88,7 +88,7 @@ traditional representation 出错，只是训练相关测试没有执行。
 N-MNIST 比较小，最适合先检查训练闭环。第一次只跑 1 个 epoch 和少量样本：
 
 ```bash
-python train_traditional_classification.py \
+python tasks/classification/scripts/train_traditional_classification.py \
   --dataset nmnist \
   --root /mnt/datasets \
   --method event_frame \
@@ -99,7 +99,7 @@ python train_traditional_classification.py \
   --batch-size 32 \
   --num-workers 0 \
   --device cuda \
-  --output-dir /mnt/outputs/traditional/classification/nmnist/event_frame_smoke
+  --output-dir /mnt/artifacts/classification/traditional/nmnist/event_frame_smoke
 ```
 
 这个命令的目的不是追求高准确率，而是检查：
@@ -113,7 +113,7 @@ python train_traditional_classification.py \
 跑完后检查输出目录：
 
 ```bash
-ls /mnt/outputs/traditional/classification/nmnist/event_frame_smoke
+ls /mnt/artifacts/classification/traditional/nmnist/event_frame_smoke
 ```
 
 应该能看到：
@@ -134,7 +134,7 @@ smoke test 通过后，再跑 5 个方法：
 
 ```bash
 for method in event_frame binary_event_image timestamp_image time_surface voxel_grid; do
-  python train_traditional_classification.py \
+  python tasks/classification/scripts/train_traditional_classification.py \
     --dataset nmnist \
     --root /mnt/datasets \
     --method $method \
@@ -144,7 +144,7 @@ for method in event_frame binary_event_image timestamp_image time_surface voxel_
     --num-workers 4 \
     --device cuda \
     --resume \
-    --output-dir /mnt/outputs/traditional/classification/nmnist/$method
+    --output-dir /mnt/artifacts/classification/traditional/nmnist/$method
 done
 ```
 
@@ -157,7 +157,7 @@ test metric，而不是最后一轮的结果。
 N-Caltech101 比 N-MNIST 更大，建议先跑 smoke test：
 
 ```bash
-python train_traditional_classification.py \
+python tasks/classification/scripts/train_traditional_classification.py \
   --dataset ncaltech101 \
   --root /mnt/datasets \
   --method event_frame \
@@ -168,14 +168,14 @@ python train_traditional_classification.py \
   --batch-size 16 \
   --num-workers 0 \
   --device cuda \
-  --output-dir /mnt/outputs/traditional/classification/ncaltech101/event_frame_smoke
+  --output-dir /mnt/artifacts/classification/traditional/ncaltech101/event_frame_smoke
 ```
 
 如果显存足够，再正式跑：
 
 ```bash
 for method in event_frame binary_event_image timestamp_image time_surface voxel_grid; do
-  python train_traditional_classification.py \
+  python tasks/classification/scripts/train_traditional_classification.py \
     --dataset ncaltech101 \
     --root /mnt/datasets \
     --method $method \
@@ -185,7 +185,7 @@ for method in event_frame binary_event_image timestamp_image time_surface voxel_
     --num-workers 4 \
     --device cuda \
     --resume \
-    --output-dir /mnt/outputs/traditional/classification/ncaltech101/$method
+    --output-dir /mnt/artifacts/classification/traditional/ncaltech101/$method
 done
 ```
 
@@ -196,14 +196,14 @@ done
 GEN1 检测更重，建议放在分类 baseline 跑通之后。先构建 window index：
 
 ```bash
-python scripts/build_gen1_window_index.py \
+python tasks/detection/scripts/build_gen1_window_index.py \
   --root /path/to/detection_dataset_duration_60s_ratio_1.0
 ```
 
 然后先跑小规模 smoke test：
 
 ```bash
-python train_gen1_detection.py \
+python tasks/detection/scripts/train_gen1_detection.py \
   --root /path/to/detection_dataset_duration_60s_ratio_1.0 \
   --method event_frame \
   --epochs 1 \
@@ -224,7 +224,7 @@ GEN1 依赖 YOLOv6 third-party 代码和数据路径，跑之前要确认 benchm
 MVSEC 的 traditional adapter 已经接入 `optical-flow`。先跑 mock smoke：
 
 ```bash
-cd optical-flow
+cd tasks/optical_flow
 python scripts/run_smoke.py
 python scripts/run_linear_benchmark.py --adapter event_frame --use-mock
 ```

@@ -1,0 +1,28 @@
+dataset: CIFAR10-DVS
+method: GET
+model:
+  depths:
+  - 2
+  - 2
+  - 8
+  drop_path_rate: 0.2
+  drop_rate: 0.2
+  embed_dim: 48
+  embed_split: 24
+  group_num: 12
+  num_classes: 10
+  num_heads:
+  - 3
+  - 6
+  - 12
+  patch_size: 4
+  window_size: 8
+training:
+  batch_size: 16
+  lr: 0.0008
+  max_epochs: 100
+  optimizer: AdamW
+  scheduler: cosine_with_warmup
+  seed: 42
+  warmup_epochs: 5
+  weight_decay: 0.05

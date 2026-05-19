@@ -1,0 +1,411 @@
+[load:train] pair 1/2 h5=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_left_events_6m.h5
+[load:train] pair 1/2 flow=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_gt_flow_full.npz
+[load:train] pair 1/2 windows=94
+[load:train] pair 2/2 h5=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_left_events_6m.h5
+[load:train] pair 2/2 flow=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_gt_flow_full.npz
+[load:train] pair 2/2 windows=75
+[load:train] total_windows=169
+[load:eval] pair 1/3 h5=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying1/indoor_flying1_left_events_6m.h5
+[load:eval] pair 1/3 flow=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying1_gt_flow_2000.npz
+[load:eval] pair 1/3 windows=283
+[load:eval] pair 2/3 h5=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_left_events_6m.h5
+[load:eval] pair 2/3 flow=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_gt_flow_full.npz
+[load:eval] pair 2/3 windows=270
+[load:eval] pair 3/3 h5=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_left_events_6m.h5
+[load:eval] pair 3/3 flow=/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_gt_flow_full.npz
+[load:eval] pair 3/3 windows=318
+[load:eval] total_windows=871
+[setup] adapter=event_pretraining train_windows=149 val_windows=20 eval_windows=871 val_strategy=block-random
+[train] caching representations=149
+[train] cached representation 1/149
+[train] cached representation 100/149
+[train] cached representation 149/149
+[val] caching representations=20
+[val] cached representation 1/20
+[val] cached representation 20/20
+[eval] caching representations=871
+[eval] cached representation 1/871
+[eval] cached representation 100/871
+[eval] cached representation 200/871
+[eval] cached representation 300/871
+[eval] cached representation 400/871
+[eval] cached representation 500/871
+[eval] cached representation 600/871
+[eval] cached representation 700/871
+[eval] cached representation 800/871
+[eval] cached representation 871/871
+[train] epoch 1/100 batches=19
+[train] epoch 1/100 batch 1
+[train] epoch 1/100 batch 19
+[train] epoch 1/100 mean_loss=1.202007
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 1: val_aee=2.285800 best
+[train] epoch 2/100 batches=19
+[train] epoch 2/100 batch 1
+[train] epoch 2/100 batch 19
+[train] epoch 2/100 mean_loss=1.177820
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 2: val_aee=2.372480 best=2.285800 stale=1/10
+[train] epoch 3/100 batches=19
+[train] epoch 3/100 batch 1
+[train] epoch 3/100 batch 19
+[train] epoch 3/100 mean_loss=1.149312
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 3: val_aee=2.325539 best=2.285800 stale=2/10
+[train] epoch 4/100 batches=19
+[train] epoch 4/100 batch 1
+[train] epoch 4/100 batch 19
+[train] epoch 4/100 mean_loss=1.148917
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 4: val_aee=2.293635 best=2.285800 stale=3/10
+[train] epoch 5/100 batches=19
+[train] epoch 5/100 batch 1
+[train] epoch 5/100 batch 19
+[train] epoch 5/100 mean_loss=1.137895
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 5: val_aee=2.325509 best=2.285800 stale=4/10
+[train] epoch 6/100 batches=19
+[train] epoch 6/100 batch 1
+[train] epoch 6/100 batch 19
+[train] epoch 6/100 mean_loss=1.121386
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 6: val_aee=2.263606 best
+[train] epoch 7/100 batches=19
+[train] epoch 7/100 batch 1
+[train] epoch 7/100 batch 19
+[train] epoch 7/100 mean_loss=1.098696
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 7: val_aee=2.285005 best=2.263606 stale=1/10
+[train] epoch 8/100 batches=19
+[train] epoch 8/100 batch 1
+[train] epoch 8/100 batch 19
+[train] epoch 8/100 mean_loss=1.091297
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 8: val_aee=2.259243 best
+[train] epoch 9/100 batches=19
+[train] epoch 9/100 batch 1
+[train] epoch 9/100 batch 19
+[train] epoch 9/100 mean_loss=1.083584
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 9: val_aee=2.191380 best
+[train] epoch 10/100 batches=19
+[train] epoch 10/100 batch 1
+[train] epoch 10/100 batch 19
+[train] epoch 10/100 mean_loss=1.083036
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 10: val_aee=2.181445 best
+[train] epoch 11/100 batches=19
+[train] epoch 11/100 batch 1
+[train] epoch 11/100 batch 19
+[train] epoch 11/100 mean_loss=1.070748
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 11: val_aee=2.110725 best
+[train] epoch 12/100 batches=19
+[train] epoch 12/100 batch 1
+[train] epoch 12/100 batch 19
+[train] epoch 12/100 mean_loss=1.052452
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 12: val_aee=2.129523 best=2.110725 stale=1/10
+[train] epoch 13/100 batches=19
+[train] epoch 13/100 batch 1
+[train] epoch 13/100 batch 19
+[train] epoch 13/100 mean_loss=1.044793
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 13: val_aee=2.115376 best=2.110725 stale=2/10
+[train] epoch 14/100 batches=19
+[train] epoch 14/100 batch 1
+[train] epoch 14/100 batch 19
+[train] epoch 14/100 mean_loss=1.021400
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 14: val_aee=2.055991 best
+[train] epoch 15/100 batches=19
+[train] epoch 15/100 batch 1
+[train] epoch 15/100 batch 19
+[train] epoch 15/100 mean_loss=1.002239
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 15: val_aee=2.030379 best
+[train] epoch 16/100 batches=19
+[train] epoch 16/100 batch 1
+[train] epoch 16/100 batch 19
+[train] epoch 16/100 mean_loss=0.990029
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 16: val_aee=2.025844 best
+[train] epoch 17/100 batches=19
+[train] epoch 17/100 batch 1
+[train] epoch 17/100 batch 19
+[train] epoch 17/100 mean_loss=0.999874
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 17: val_aee=2.047920 best=2.025844 stale=1/10
+[train] epoch 18/100 batches=19
+[train] epoch 18/100 batch 1
+[train] epoch 18/100 batch 19
+[train] epoch 18/100 mean_loss=0.988381
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 18: val_aee=1.978102 best
+[train] epoch 19/100 batches=19
+[train] epoch 19/100 batch 1
+[train] epoch 19/100 batch 19
+[train] epoch 19/100 mean_loss=0.969350
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 19: val_aee=2.069682 best=1.978102 stale=1/10
+[train] epoch 20/100 batches=19
+[train] epoch 20/100 batch 1
+[train] epoch 20/100 batch 19
+[train] epoch 20/100 mean_loss=0.970189
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 20: val_aee=2.068136 best=1.978102 stale=2/10
+[train] epoch 21/100 batches=19
+[train] epoch 21/100 batch 1
+[train] epoch 21/100 batch 19
+[train] epoch 21/100 mean_loss=0.963554
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 21: val_aee=1.954437 best
+[train] epoch 22/100 batches=19
+[train] epoch 22/100 batch 1
+[train] epoch 22/100 batch 19
+[train] epoch 22/100 mean_loss=0.943179
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 22: val_aee=1.937529 best
+[train] epoch 23/100 batches=19
+[train] epoch 23/100 batch 1
+[train] epoch 23/100 batch 19
+[train] epoch 23/100 mean_loss=0.936818
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 23: val_aee=1.938015 best=1.937529 stale=1/10
+[train] epoch 24/100 batches=19
+[train] epoch 24/100 batch 1
+[train] epoch 24/100 batch 19
+[train] epoch 24/100 mean_loss=0.941831
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 24: val_aee=1.998047 best=1.937529 stale=2/10
+[train] epoch 25/100 batches=19
+[train] epoch 25/100 batch 1
+[train] epoch 25/100 batch 19
+[train] epoch 25/100 mean_loss=0.931864
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 25: val_aee=1.929119 best
+[train] epoch 26/100 batches=19
+[train] epoch 26/100 batch 1
+[train] epoch 26/100 batch 19
+[train] epoch 26/100 mean_loss=0.921561
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 26: val_aee=1.943406 best=1.929119 stale=1/10
+[train] epoch 27/100 batches=19
+[train] epoch 27/100 batch 1
+[train] epoch 27/100 batch 19
+[train] epoch 27/100 mean_loss=0.917030
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 27: val_aee=1.934747 best=1.929119 stale=2/10
+[train] epoch 28/100 batches=19
+[train] epoch 28/100 batch 1
+[train] epoch 28/100 batch 19
+[train] epoch 28/100 mean_loss=0.917526
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 28: val_aee=1.916193 best
+[train] epoch 29/100 batches=19
+[train] epoch 29/100 batch 1
+[train] epoch 29/100 batch 19
+[train] epoch 29/100 mean_loss=0.912621
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 29: val_aee=1.899908 best
+[train] epoch 30/100 batches=19
+[train] epoch 30/100 batch 1
+[train] epoch 30/100 batch 19
+[train] epoch 30/100 mean_loss=0.902707
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 30: val_aee=1.860675 best
+[train] epoch 31/100 batches=19
+[train] epoch 31/100 batch 1
+[train] epoch 31/100 batch 19
+[train] epoch 31/100 mean_loss=0.922588
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 31: val_aee=1.907139 best=1.860675 stale=1/10
+[train] epoch 32/100 batches=19
+[train] epoch 32/100 batch 1
+[train] epoch 32/100 batch 19
+[train] epoch 32/100 mean_loss=0.899257
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 32: val_aee=1.883331 best=1.860675 stale=2/10
+[train] epoch 33/100 batches=19
+[train] epoch 33/100 batch 1
+[train] epoch 33/100 batch 19
+[train] epoch 33/100 mean_loss=0.882979
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 33: val_aee=1.906240 best=1.860675 stale=3/10
+[train] epoch 34/100 batches=19
+[train] epoch 34/100 batch 1
+[train] epoch 34/100 batch 19
+[train] epoch 34/100 mean_loss=0.890264
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 34: val_aee=1.952857 best=1.860675 stale=4/10
+[train] epoch 35/100 batches=19
+[train] epoch 35/100 batch 1
+[train] epoch 35/100 batch 19
+[train] epoch 35/100 mean_loss=0.882597
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 35: val_aee=1.888878 best=1.860675 stale=5/10
+[train] epoch 36/100 batches=19
+[train] epoch 36/100 batch 1
+[train] epoch 36/100 batch 19
+[train] epoch 36/100 mean_loss=0.878671
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 36: val_aee=1.883063 best=1.860675 stale=6/10
+[train] epoch 37/100 batches=19
+[train] epoch 37/100 batch 1
+[train] epoch 37/100 batch 19
+[train] epoch 37/100 mean_loss=0.877179
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 37: val_aee=1.897521 best=1.860675 stale=7/10
+[train] epoch 38/100 batches=19
+[train] epoch 38/100 batch 1
+[train] epoch 38/100 batch 19
+[train] epoch 38/100 mean_loss=0.854442
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 38: val_aee=1.872747 best=1.860675 stale=8/10
+[train] epoch 39/100 batches=19
+[train] epoch 39/100 batch 1
+[train] epoch 39/100 batch 19
+[train] epoch 39/100 mean_loss=0.858081
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 39: val_aee=1.888420 best=1.860675 stale=9/10
+[train] epoch 40/100 batches=19
+[train] epoch 40/100 batch 1
+[train] epoch 40/100 batch 19
+[train] epoch 40/100 mean_loss=0.853750
+[val] batches=20
+[val] batch 1
+[val] batch 20
+[early-stop] epoch 40: val_aee=1.978602 best=1.860675 stale=10/10
+[early-stop] stopping at epoch 40; best_epoch=30
+[eval] batches=871
+[eval] batch 1
+[eval] batch 100
+[eval] batch 200
+[eval] batch 300
+[eval] batch 400
+[eval] batch 500
+[eval] batch 600
+[eval] batch 700
+[eval] batch 800
+[eval] batch 871
+{
+  "adapter_name": "event_pretraining",
+  "aee": 2.5401478751244966,
+  "best_epoch": 30,
+  "best_val_aee": 1.8606752753257751,
+  "channels": 2,
+  "curve_log_path": "logs_float64_cached_20260516/curves/original_od12_if123_full6m_event_pretraining_e100_block-random_curve.csv",
+  "curve_log_requested": "logs_float64_cached_20260516/curves/original_od12_if123_full6m_event_pretraining_e100_block-random_curve.csv",
+  "early_stop_min_delta": 0.001,
+  "early_stop_patience": 10,
+  "early_stop_val_source_counts": {
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_left_events_6m.h5": 11,
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_left_events_6m.h5": 9
+  },
+  "early_stop_val_strategy": "block-random",
+  "early_stop_val_strategy_requested": "block-random",
+  "early_stop_val_windows": 20,
+  "early_stop_val_windows_requested": 20,
+  "early_stopped": true,
+  "epochs_completed": 40,
+  "eval_sets": [
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying1/indoor_flying1_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying1_gt_flow_2000.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying2_gt_flow_full.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/indoor_flying/indoor_flying3_gt_flow_full.npz"
+  ],
+  "eval_windows": 871,
+  "max_eval_windows_per_set": null,
+  "max_train_windows_per_set": null,
+  "outlier_percent": 30.672413916326636,
+  "progress_every": 100,
+  "stride": 200,
+  "train_sets": [
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day1_gt_flow_full.npz",
+    "/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_left_events_6m.h5:/mnt/datasets/MVSEC_float64_20260516/mvsec_float64_delivery_20260516/outdoor_day/outdoor_day2_gt_flow_full.npz"
+  ],
+  "train_windows": 149,
+  "valid_count": 78355160,
+  "wandb_mode": null,
+  "wandb_project": null,
+  "wandb_run_name": null,
+  "window_alignment": "timestamp",
+  "window_size": 200
+}

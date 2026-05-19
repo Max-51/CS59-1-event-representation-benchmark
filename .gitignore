@@ -16,3 +16,9 @@ metadata/gen1_windows*/
 artifacts/traditional_baseline_analysis/20260506/
 artifacts/traditional_baseline_analysis/20260507/
 artifacts/traditional_baseline_analysis/20260508_update/
+
+# keep formal MVSEC deliverables under the new task-oriented artifacts tree
+!artifacts/optical_flow/mvsec/**/results/
+!artifacts/optical_flow/mvsec/**/results/**
+!artifacts/optical_flow/mvsec/**/logs/
+!artifacts/optical_flow/mvsec/**/logs/**

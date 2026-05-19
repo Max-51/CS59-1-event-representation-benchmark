@@ -1,0 +1,19 @@
+dataset,group,method,accuracy_pct,protocol,source,note
+ncaltech101,Learning-based,EST adaptation,70.44,repository recorded full result,results/classification/est/est_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,EvRepSL,64.81,repository recorded full result,results/classification/evrepsl/evrepsl_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,EST End-to-End,64.29,repository recorded full result,results/classification/est/est_e2e_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,Event Camera Data Pre-training,64.12,repository recorded full result,results/classification/event_pretraining/event_pretraining_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,EventOrdering,58.73,repository recorded full result,results/classification/ergo/ergo_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,GET,56.7164,repository recorded full result,results/classification/get/get_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Learning-based,Matrix-LSTM (end-to-end adapted),53.16,repository recorded full result,results/classification/matrix_lstm/matrix_lstm_ncaltech101.json,Learning-based classification result already recorded in repository
+ncaltech101,Traditional,Timestamp Image,52.9277,full official/test split,ncaltech101_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+ncaltech101,Traditional,Time Surface,51.7796,full official/test split,ncaltech101_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+ncaltech101,Traditional,Event Frame,49.6556,full official/test split,ncaltech101_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+ncaltech101,Traditional,Voxel Grid,49.6556,full official/test split,ncaltech101_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+ncaltech101,Traditional,Binary Event Image,48.6797,full official/test split,ncaltech101_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+nmnist,Learning-based,EvRepSL,98.81,repository recorded full result,results/classification/evrepsl/evrepsl_nmnist.json,Learning-based classification result already recorded in repository
+nmnist,Traditional,Voxel Grid,99.08,full official/test split,nmnist_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+nmnist,Traditional,Time Surface,98.63,full official/test split,nmnist_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+nmnist,Traditional,Event Frame,98.28,full official/test split,nmnist_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+nmnist,Traditional,Timestamp Image,98.05,full official/test split,nmnist_traditional_records.tar.gz,Traditional representation + ResNet18 classifier
+nmnist,Traditional,Binary Event Image,95.06,full official/test split,nmnist_traditional_records.tar.gz,Traditional representation + ResNet18 classifier

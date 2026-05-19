@@ -32,6 +32,10 @@ and upload it to:
 data/cifar10dvs/CIFAR10DVS.zip
 ```
 
+If the uploaded archive has another name, rename or symlink it to
+`CIFAR10DVS.zip` before launching the benchmark. Tonic will reuse this local
+zip instead of downloading again.
+
 ## Split And Protocol
 
 CIFAR10-DVS has no official train/test split in Tonic, so the scripts use a
@@ -55,9 +59,14 @@ max_events=50000
 
 ```bash
 cd ~/CS59-1-event-representation-benchmark
-DATA_ROOT=$PWD/data/cifar10dvs RUN_TAG=smoke_cifar10dvs EPOCHS=1 PATIENCE=0 \
+DATA_ROOT=$PWD/data/cifar10dvs RUN_TAG=smoke_cifar10dvs \
+  EPOCHS=1 PATIENCE=0 TRAIN_LIMIT=256 TEST_LIMIT=128 \
+  LEARNING_METHODS="est" TRADITIONAL_METHODS="event_frame" \
   bash scripts/run_cifar10dvs_classification_benchmark.sh
 ```
+
+After the smoke test succeeds, remove the limits and method filters for the
+full run.
 
 ## Full Run
 
@@ -67,6 +76,17 @@ DATA_ROOT=$PWD/data/cifar10dvs RUN_TAG=20260515_cifar10dvs_gpu_full_aligned \
   bash scripts/run_cifar10dvs_classification_benchmark.sh
 ```
 
+Useful environment overrides:
+
+```bash
+DEVICE=cuda:0
+NUM_WORKERS=8
+BATCH_SIZE=32
+RESUME=1
+LEARNING_METHODS="est ergo event_pretraining matrix_lstm evrepsl get omnievent"
+TRADITIONAL_METHODS="event_frame binary_event_image timestamp_image time_surface voxel_grid"
+```
+
 ## Small Result Archive
 
 This archives metrics only and excludes checkpoints:
@@ -74,6 +94,6 @@ This archives metrics only and excludes checkpoints:
 ```bash
 cd ~/CS59-1-event-representation-benchmark
 tar -czf cifar10dvs_classification_results_only.tar.gz \
-  outputs/learning_classification/cifar10dvs/20260515_cifar10dvs_gpu_full_aligned/results \
-  outputs/traditional/classification/cifar10dvs/20260515_cifar10dvs_gpu_full_aligned
+  artifacts/classification/learning/cifar10dvs/20260515_cifar10dvs_gpu_full_aligned/results \
+  artifacts/classification/traditional/cifar10dvs/20260515_cifar10dvs_gpu_full_aligned
 ```
