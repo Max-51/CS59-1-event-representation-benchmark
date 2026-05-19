@@ -36,6 +36,7 @@ For a Chinese step-by-step guide, including smoke tests and recommended run
 order, see:
 
 - `docs/traditional_baseline_guide_zh.md`
+- `docs/traditional_repo_index_zh.md` (repo-wide index for all traditional-method code/results paths)
 
 Classification result tables, training histories, and quick-look figures for
 the traditional N-MNIST and N-Caltech101 runs are available in:

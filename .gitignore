@@ -11,3 +11,8 @@ metadata/gen1_windows*/
 *.pt
 *.pth
 *.onnx
+
+# local draft snapshots (not part of the formal traditional baseline deliverables)
+artifacts/traditional_baseline_analysis/20260506/
+artifacts/traditional_baseline_analysis/20260507/
+artifacts/traditional_baseline_analysis/20260508_update/

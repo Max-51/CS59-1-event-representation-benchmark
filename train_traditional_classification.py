@@ -70,7 +70,7 @@ def import_training_dependencies():
 
     try:
         import tonic
-import src.datasets.cifar10dvs_patch  # local .aedat loader
+        import src.datasets.cifar10dvs_patch  # local .aedat loader
     except ImportError as exc:
         raise SystemExit(
             "Missing dependency 'tonic'. Install it in the training environment, "
