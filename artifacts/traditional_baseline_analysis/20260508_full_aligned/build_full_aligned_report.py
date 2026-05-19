@@ -17,25 +17,49 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "artifacts" / "traditional_baseline_analysis" / "20260508_full_aligned"
-TRAD_CLS = ROOT / "artifacts" / "traditional_classification" / "tables" / "traditional_classification_results.csv"
-NCAL_LEARN_ROOT = ROOT / "results" / "classification"
-NMNIST_LEARN_ROOT = ROOT / "artifacts" / "learning_classification" / "nmnist" / "20260508_gpu_full_aligned" / "records"
-MVSEC_CSV = ROOT / "optical-flow" / "artifacts" / "mvsec_results" / "20260506_traditional_vs_learning" / "tables" / "mvsec_comparison_results.csv"
+
+TRAD_TABLE = ROOT / "artifacts" / "traditional_classification" / "tables" / "traditional_classification_results.csv"
+TRAD_CIFAR_DIR = (
+    ROOT
+    / "artifacts"
+    / "traditional_classification"
+    / "cifar10dvs"
+    / "20260519_cifar10dvs_aligned_cls_v2_traditional"
+)
+NMINST_LEARNING_DIR = (
+    ROOT / "artifacts" / "learning_classification" / "nmnist" / "20260508_gpu_full_aligned" / "results"
+)
+LEARNING_RESULTS_DIR = ROOT / "results" / "classification"
+MVSEC_SUMMARY = ROOT / "optical-flow" / "results_float64_cached_20260516" / "summary_all" / "mvsec_e100_earlystop_summary.csv"
+
+TRADITIONAL_METHODS = {
+    "event_frame",
+    "event_count",
+    "binary_event_image",
+    "timestamp_image",
+    "time_surface",
+    "voxel_grid",
+}
 
 METHOD_LABELS = {
     "binary_event_image": "Binary Event Image",
+    "event_count": "Event Count",
     "event_frame": "Event Frame",
     "timestamp_image": "Timestamp Image",
     "time_surface": "Time Surface",
     "voxel_grid": "Voxel Grid",
     "ergo": "ERGO",
     "est": "EST",
+    "est_e2e": "EST End-to-End",
     "event_pretraining": "Event Pre-training",
     "evrepsl": "EvRepSL",
     "get": "GET",
     "matrix_lstm": "Matrix-LSTM",
+    "matrixlstm": "Matrix-LSTM",
     "omnievent": "OmniEvent",
 }
+
+GROUP_COLORS = {"Traditional": "#D55E00", "Learning-based": "#0072B2"}
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -44,6 +68,8 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
@@ -51,31 +77,114 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
-def latex_escape(text: str) -> str:
-    return (
-        text.replace("\\", r"\textbackslash{}")
-        .replace("&", r"\&")
-        .replace("%", r"\%")
-        .replace("_", r"\_")
-        .replace("#", r"\#")
-    )
+def normalize_dataset(name: str) -> str:
+    key = str(name).strip().lower().replace("-", "").replace("_", "")
+    if "nmnist" in key:
+        return "nmnist"
+    if "ncaltech101" in key:
+        return "ncaltech101"
+    if "cifar10dvs" in key:
+        return "cifar10dvs"
+    return key
+
+
+def normalize_method(raw_method: str, source_path: Path) -> str:
+    base = str(raw_method or "").strip().lower().replace(" ", "_")
+    if source_path.name == "est_e2e_ncaltech101.json":
+        return "est_e2e"
+    if "end-to-end" in base:
+        return "est_e2e"
+    if base == "matrixlstm":
+        return "matrix_lstm"
+    if base.startswith("est"):
+        return "est"
+    return base or source_path.parent.name.lower()
+
+
+def pick_float(data: dict, keys: list[str], default: float | None = None) -> float | None:
+    for key in keys:
+        if key in data and data[key] is not None:
+            try:
+                return float(data[key])
+            except (TypeError, ValueError):
+                continue
+    return default
+
+
+def pick_int(data: dict, keys: list[str], default: int | None = None) -> int | None:
+    val = pick_float(data, keys, None)
+    if val is None:
+        return default
+    return int(val)
+
+
+def extract_history(data: dict) -> list[dict]:
+    history = data.get("train_history")
+    if isinstance(history, list):
+        return history
+    history = data.get("training_log")
+    if isinstance(history, list):
+        return history
+    return []
+
+
+def extract_early_stopping(data: dict) -> dict:
+    payload = data.get("early_stopping")
+    if isinstance(payload, dict):
+        return payload
+    return {}
+
+
+def best_epoch_from_history(history: list[dict]) -> int:
+    best_epoch = 0
+    best_acc = float("-inf")
+    for row in history:
+        if "test_acc" not in row:
+            continue
+        try:
+            acc = float(row["test_acc"])
+        except (TypeError, ValueError):
+            continue
+        if acc > best_acc:
+            best_acc = acc
+            best_epoch = int(row.get("epoch", 0))
+    return best_epoch
+
+
+def clean_out_dir() -> None:
+    if not OUT.exists():
+        OUT.mkdir(parents=True, exist_ok=True)
+        return
+    for path in OUT.iterdir():
+        if path.name == "build_full_aligned_report.py":
+            continue
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            for sub in sorted(path.rglob("*"), reverse=True):
+                if sub.is_file():
+                    sub.unlink()
+                else:
+                    sub.rmdir()
+            path.rmdir()
 
 
 def load_traditional_rows() -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for row in read_csv(TRAD_CLS):
+    for row in read_csv(TRAD_TABLE):
+        dataset = normalize_dataset(row["dataset"])
+        method = normalize_method(row["method"], TRAD_TABLE)
         rows.append(
             {
-                "dataset": row["dataset"],
+                "dataset": dataset,
                 "task": "classification",
                 "group": "Traditional",
-                "method": row["method"],
-                "method_label": row["method_label"],
-                "accuracy_pct": 100.0 * float(row["test_accuracy"]),
-                "test_loss": float(row["test_loss"]),
+                "method": method,
+                "method_label": METHOD_LABELS.get(method, row["method_label"]),
+                "accuracy_pct": round(100.0 * float(row["test_accuracy"]), 4),
                 "best_epoch": int(row["best_epoch"]),
                 "epochs_completed": int(row["epochs"]),
-                "early_stopped": row["stopped_early"],
+                "early_stopped": str(row["stopped_early"]),
                 "batch_size": int(row["batch_size"]),
                 "lr": "",
                 "weight_decay": "",
@@ -88,84 +197,155 @@ def load_traditional_rows() -> list[dict[str, object]]:
                 "note": "Traditional representation + ResNet18 classifier",
             }
         )
-    return rows
 
-
-def load_nmnist_learning_rows() -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    for path in sorted(NMNIST_LEARN_ROOT.rglob("*_nmnist.json")):
-        data = json.loads(path.read_text(encoding="utf-8"))
-        history = data.get("train_history", [])
+    for result_path in sorted(TRAD_CIFAR_DIR.glob("*/result.json")):
+        data = json.loads(result_path.read_text(encoding="utf-8"))
+        method = normalize_method(data.get("method", result_path.parent.name), result_path)
         best_epoch = 0
-        if history:
-            best_epoch = int(max(history, key=lambda h: float(h.get("test_acc", 0.0))).get("epoch", 0))
+        progress_path = result_path.parent / "progress.json"
+        if progress_path.exists():
+            try:
+                progress_data = json.loads(progress_path.read_text(encoding="utf-8"))
+                best_epoch = int(progress_data.get("best_epoch") or 0)
+            except (json.JSONDecodeError, ValueError, TypeError):
+                best_epoch = 0
         rows.append(
             {
-                "dataset": "nmnist",
+                "dataset": "cifar10dvs",
                 "task": "classification",
-                "group": "Learning-based",
-                "method": data["method"],
-                "method_label": METHOD_LABELS.get(data["method"], data["method"]),
-                "accuracy_pct": float(data["best_test_accuracy_pct"]),
-                "test_loss": "",
+                "group": "Traditional",
+                "method": method,
+                "method_label": METHOD_LABELS.get(method, method),
+                "accuracy_pct": round(float(data["best_accuracy_pct"]), 4),
                 "best_epoch": best_epoch,
-                "epochs_completed": int(data.get("early_stopping", {}).get("actual_epochs", data["epochs"])),
-                "early_stopped": str(data.get("early_stopping", {}).get("triggered", False)),
+                "epochs_completed": int(data["early_stopping"]["actual_epochs"]),
+                "early_stopped": str(data["early_stopping"]["triggered"]),
                 "batch_size": int(data["batch_size"]),
                 "lr": float(data["lr"]),
                 "weight_decay": float(data["weight_decay"]),
                 "seed": int(data["seed"]),
-                "device": data["gpu"],
+                "device": str(data.get("gpu", "")),
                 "input_channels": int(data["in_channels"]),
-                "test_samples": 10000,
-                "protocol": "official/full test split; GPU full aligned run",
-                "source": str(path.relative_to(ROOT)),
-                "note": "Learning-based representation + ResNet18 classifier",
+                "test_samples": int(data["test_size"]),
+                "protocol": f"{data.get('split_strategy', 'unknown')} split",
+                "source": str(result_path.relative_to(ROOT)),
+                "note": "Traditional representation + ResNet18 classifier",
             }
         )
     return rows
 
 
-def load_ncal_learning_rows() -> list[dict[str, object]]:
+def load_learning_rows() -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for path in sorted(NCAL_LEARN_ROOT.rglob("*ncaltech101.json")):
+
+    nmnist_paths = sorted(NMINST_LEARNING_DIR.rglob("*_nmnist.json"))
+    for path in nmnist_paths:
         data = json.loads(path.read_text(encoding="utf-8"))
-        method = str(data.get("method", path.parent.name))
-        label = METHOD_LABELS.get(method, method)
-        if path.name == "est_ncaltech101.json":
-            label = "EST adaptation"
-        elif path.name == "est_e2e_ncaltech101.json":
-            label = "EST End-to-End"
-        if "best_test_accuracy_pct" in data:
-            acc = float(data["best_test_accuracy_pct"])
-        elif "best_test_accuracy" in data:
-            acc = 100.0 * float(data["best_test_accuracy"])
-        elif "best_test_acc" in data:
-            acc = float(data["best_test_acc"])
-        else:
-            continue
+        method = normalize_method(path.parent.name, path)
+        history = extract_history(data)
+        early = extract_early_stopping(data)
         rows.append(
             {
-                "dataset": "ncaltech101",
+                "dataset": "nmnist",
                 "task": "classification",
                 "group": "Learning-based",
                 "method": method,
-                "method_label": label,
-                "accuracy_pct": acc,
-                "test_loss": "",
-                "best_epoch": "",
-                "epochs_completed": int(data.get("epochs_trained", data.get("epochs", 100))),
-                "early_stopped": "",
-                "batch_size": int(data.get("batch_size", 0)),
-                "lr": data.get("lr", ""),
-                "weight_decay": data.get("weight_decay", ""),
-                "seed": data.get("seed", 42),
-                "device": data.get("gpu", ""),
-                "input_channels": data.get("in_channels", ""),
-                "test_samples": "",
-                "protocol": "repository recorded N-Caltech101 result",
+                "method_label": METHOD_LABELS.get(method, method),
+                "accuracy_pct": round(float(data["best_test_accuracy_pct"]), 4),
+                "best_epoch": best_epoch_from_history(history),
+                "epochs_completed": int(early.get("actual_epochs", data.get("epochs", 100))),
+                "early_stopped": str(early.get("triggered", False)),
+                "batch_size": int(data["batch_size"]),
+                "lr": float(data["lr"]),
+                "weight_decay": float(data["weight_decay"]),
+                "seed": int(data["seed"]),
+                "device": str(data.get("gpu", "")),
+                "input_channels": int(data["in_channels"]),
+                "test_samples": 10000,
+                "protocol": "official/full test split",
+                "source": str(path.relative_to(ROOT)),
+                "note": "Learning-based representation + ResNet18 classifier",
+            }
+        )
+
+    for path in sorted(LEARNING_RESULTS_DIR.rglob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        dataset = normalize_dataset(str(data.get("dataset", "")))
+        if dataset not in {"ncaltech101", "cifar10dvs"}:
+            continue
+
+        method = normalize_method(path.parent.name, path)
+        history = extract_history(data)
+        early = extract_early_stopping(data)
+        acc = pick_float(data, ["best_test_accuracy_pct"], None)
+        if acc is None:
+            acc_raw = pick_float(data, ["best_test_accuracy", "best_test_acc"], None)
+            if acc_raw is None:
+                continue
+            acc = 100.0 * acc_raw if acc_raw <= 1.0 else acc_raw
+
+        epochs_completed = pick_int(
+            data,
+            [
+                "epochs_actual",
+                "actual_epochs_trained",
+                "epochs_trained",
+                "epochs_actual_trained",
+                "actual_epochs",
+                "epochs",
+            ],
+            0,
+        )
+        if not epochs_completed:
+            epochs_completed = int(early.get("actual_epochs", 0))
+        if not epochs_completed:
+            epochs_completed = int(data.get("epochs_planned", 0))
+
+        rows.append(
+            {
+                "dataset": dataset,
+                "task": "classification",
+                "group": "Learning-based",
+                "method": method,
+                "method_label": METHOD_LABELS.get(method, method),
+                "accuracy_pct": round(float(acc), 4),
+                "best_epoch": best_epoch_from_history(history),
+                "epochs_completed": int(epochs_completed),
+                "early_stopped": str(early.get("triggered", early.get("stopped", ""))),
+                "batch_size": int(pick_int(data, ["batch_size", "actual_batch_size"], 0)),
+                "lr": pick_float(data, ["learning_rate", "lr"], ""),
+                "weight_decay": pick_float(data, ["weight_decay"], ""),
+                "seed": int(pick_int(data, ["seed"], 42)),
+                "device": str(data.get("gpu", "")),
+                "input_channels": int(pick_int(data, ["in_channels", "input_channels"], 0)),
+                "test_samples": int(pick_int(data, ["test_size"], 0)),
+                "protocol": str(data.get("split", "repository recorded split")),
                 "source": str(path.relative_to(ROOT)),
                 "note": "Repository learning-based classification result",
+            }
+        )
+    return rows
+
+
+def load_mvsec_rows() -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for row in read_csv(MVSEC_SUMMARY):
+        method = normalize_method(row["method"], MVSEC_SUMMARY)
+        group = "Traditional" if method in TRADITIONAL_METHODS else "Learning-based"
+        rows.append(
+            {
+                "dataset": "mvsec",
+                "task": "optical_flow",
+                "group": group,
+                "method": method,
+                "method_label": METHOD_LABELS.get(method, method),
+                "aee": float(row["aee"]),
+                "outlier_percent": float(row["outlier_percent"]),
+                "epochs_completed": int(float(row["epochs_completed"])),
+                "best_epoch": int(float(row["best_epoch"])),
+                "best_val_aee": float(row["best_val_aee"]),
+                "window_alignment": row.get("window_alignment", ""),
+                "source": row.get("file", ""),
             }
         )
     return rows
@@ -180,9 +360,12 @@ def style_axis(ax, axis: str = "x") -> None:
 
 def plot_accuracy(rows: list[dict[str, object]], dataset: str, filename: str, title: str, xmin_pad: float = 2.0) -> None:
     subset = sorted([r for r in rows if r["dataset"] == dataset], key=lambda r: float(r["accuracy_pct"]))
+    if not subset:
+        return
     labels = [str(r["method_label"]) for r in subset]
     values = [float(r["accuracy_pct"]) for r in subset]
-    colors = ["#D55E00" if r["group"] == "Traditional" else "#0072B2" for r in subset]
+    colors = [GROUP_COLORS[r["group"]] for r in subset]
+
     fig_h = max(4.8, 0.36 * len(subset) + 1.2)
     fig, ax = plt.subplots(figsize=(8.2, fig_h))
     y = np.arange(len(subset))
@@ -193,12 +376,14 @@ def plot_accuracy(rows: list[dict[str, object]], dataset: str, filename: str, ti
     ax.set_title(title)
     style_axis(ax)
     ax.set_xlim(max(0.0, min(values) - xmin_pad), min(100.5, max(values) + 1.1))
+
     for bar, value in zip(bars, values):
         ax.text(value + 0.08, bar.get_y() + bar.get_height() / 2, f"{value:.2f}", va="center", fontsize=8.0)
+
     ax.legend(
         handles=[
-            plt.Rectangle((0, 0), 1, 1, color="#D55E00", label="Traditional"),
-            plt.Rectangle((0, 0), 1, 1, color="#0072B2", label="Learning-based"),
+            plt.Rectangle((0, 0), 1, 1, color=GROUP_COLORS["Traditional"], label="Traditional"),
+            plt.Rectangle((0, 0), 1, 1, color=GROUP_COLORS["Learning-based"], label="Learning-based"),
         ],
         loc="lower right",
         frameon=True,
@@ -210,20 +395,32 @@ def plot_accuracy(rows: list[dict[str, object]], dataset: str, filename: str, ti
 
 
 def plot_nmnist_efficiency(rows: list[dict[str, object]]) -> None:
-    subset = sorted([r for r in rows if r["dataset"] == "nmnist"], key=lambda r: str(r["group"]))
+    subset = [r for r in rows if r["dataset"] == "nmnist" and int(r["best_epoch"]) > 0]
+    if not subset:
+        return
     fig, ax = plt.subplots(figsize=(7.8, 4.8))
-    for group, color, marker in [("Traditional", "#D55E00", "o"), ("Learning-based", "#0072B2", "s")]:
+    for group, marker in [("Traditional", "o"), ("Learning-based", "s")]:
         group_rows = [r for r in subset if r["group"] == group]
         x = [float(r["best_epoch"]) for r in group_rows]
         y = [float(r["accuracy_pct"]) for r in group_rows]
-        sizes = [42 + 8 * float(r["input_channels"]) for r in group_rows]
-        ax.scatter(x, y, s=sizes, c=color, marker=marker, alpha=0.88, edgecolor="white", linewidth=0.7, label=group)
+        sizes = [42 + 8 * max(1, float(r["input_channels"])) for r in group_rows]
+        ax.scatter(
+            x,
+            y,
+            s=sizes,
+            c=GROUP_COLORS[group],
+            marker=marker,
+            alpha=0.88,
+            edgecolor="white",
+            linewidth=0.7,
+            label=group,
+        )
         for r, xi, yi in zip(group_rows, x, y):
-            ax.text(xi + 0.25, yi + 0.015, str(r["method_label"]), fontsize=7.2)
+            ax.text(xi + 0.22, yi + 0.015, str(r["method_label"]), fontsize=7.1)
     ax.set_xlabel("Best epoch")
     ax.set_ylabel("Test accuracy (%)")
-    ax.set_title("N-MNIST Accuracy vs. Early-stop Epoch")
-    ax.set_ylim(94.7, 99.75)
+    ax.set_title("N-MNIST Accuracy vs. Best Epoch")
+    ax.set_ylim(94.0, 100.0)
     style_axis(ax, axis="both")
     ax.legend(frameon=True, loc="lower right")
     fig.tight_layout()
@@ -232,26 +429,31 @@ def plot_nmnist_efficiency(rows: list[dict[str, object]]) -> None:
     plt.close(fig)
 
 
-def plot_mvsec(rows: list[dict[str, str]]) -> None:
+def plot_mvsec(rows: list[dict[str, object]]) -> None:
+    if not rows:
+        return
     rows = sorted(rows, key=lambda r: float(r["aee"]), reverse=True)
-    labels = [r["method_label"] for r in rows]
+    labels = [str(r["method_label"]) for r in rows]
     values = [float(r["aee"]) for r in rows]
-    colors = ["#D55E00" if r["group"] == "Traditional" else "#0072B2" for r in rows]
-    fig, ax = plt.subplots(figsize=(8.2, 5.8))
+    colors = [GROUP_COLORS[r["group"]] for r in rows]
+    xmin = max(0.0, min(values) - 0.05)
+    xmax = max(values) + 0.05
+
+    fig, ax = plt.subplots(figsize=(8.2, 6.0))
     y = np.arange(len(rows))
     bars = ax.barh(y, values, color=colors, edgecolor="white", linewidth=0.7)
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
     ax.set_xlabel("AEE (lower is better)")
-    ax.set_title("MVSEC Optical Flow: Unified Protocol")
-    ax.set_xlim(2.74, 3.05)
+    ax.set_title("MVSEC Optical Flow (Unified Protocol)")
+    ax.set_xlim(xmin, xmax)
     style_axis(ax)
     for bar, value in zip(bars, values):
-        ax.text(value + 0.004, bar.get_y() + bar.get_height() / 2, f"{value:.3f}", va="center", fontsize=8.0)
+        ax.text(value + 0.004, bar.get_y() + bar.get_height() / 2, f"{value:.4f}", va="center", fontsize=8.0)
     ax.legend(
         handles=[
-            plt.Rectangle((0, 0), 1, 1, color="#D55E00", label="Traditional"),
-            plt.Rectangle((0, 0), 1, 1, color="#0072B2", label="Learning-based"),
+            plt.Rectangle((0, 0), 1, 1, color=GROUP_COLORS["Traditional"], label="Traditional"),
+            plt.Rectangle((0, 0), 1, 1, color=GROUP_COLORS["Learning-based"], label="Learning-based"),
         ],
         loc="lower right",
         frameon=True,
@@ -262,48 +464,34 @@ def plot_mvsec(rows: list[dict[str, str]]) -> None:
     plt.close(fig)
 
 
-def write_readme(nmnist_rows: list[dict[str, object]]) -> None:
-    lines = [
-        "# N-MNIST GPU Full Aligned Learning Results",
-        "",
-        "These files record the full N-MNIST learning-based classification runs used by the updated comparison report.",
-        "",
-        "- split: official N-MNIST train/test",
-        "- device: NVIDIA GeForce RTX 4090",
-        "- epochs: 100 maximum",
-        "- early stopping: patience 10",
-        "- batch size: 32",
-        "- learning rate: 0.0001",
-        "- weight decay: 0.0001",
-        "- seed: 42",
-        "- classifier: ResNet18-style EventClassifier used by the repository training script",
-        "",
-        "| Method | Best test accuracy (%) | Best epoch | Actual epochs | Channels |",
-        "| --- | ---: | ---: | ---: | ---: |",
-    ]
-    for row in sorted(nmnist_rows, key=lambda r: -float(r["accuracy_pct"])):
-        lines.append(
-            f"| {row['method_label']} | {float(row['accuracy_pct']):.2f} | {row['best_epoch']} | "
-            f"{row['epochs_completed']} | {row['input_channels']} |"
-        )
-    lines.append("")
-    lines.append("Raw JSON files are under `records/`. Checkpoints and raw datasets are intentionally excluded.")
-    (ROOT / "artifacts" / "learning_classification" / "nmnist" / "20260508_gpu_full_aligned" / "README.md").write_text(
-        "\n".join(lines), encoding="utf-8"
+def latex_escape(text: str) -> str:
+    return (
+        text.replace("\\", r"\textbackslash{}")
+        .replace("&", r"\&")
+        .replace("%", r"\%")
+        .replace("_", r"\_")
+        .replace("#", r"\#")
     )
 
 
-def write_report(cls_rows: list[dict[str, object]], mvsec_rows: list[dict[str, str]]) -> None:
-    nmnist = [r for r in cls_rows if r["dataset"] == "nmnist"]
-    ncal = [r for r in cls_rows if r["dataset"] == "ncaltech101"]
-    best_nmnist = max(nmnist, key=lambda r: float(r["accuracy_pct"]))
-    best_nmnist_trad = max([r for r in nmnist if r["group"] == "Traditional"], key=lambda r: float(r["accuracy_pct"]))
-    best_nmnist_learning = max([r for r in nmnist if r["group"] == "Learning-based"], key=lambda r: float(r["accuracy_pct"]))
-    worst_nmnist = min(nmnist, key=lambda r: float(r["accuracy_pct"]))
-    best_ncal = max(ncal, key=lambda r: float(r["accuracy_pct"]))
-    best_ncal_trad = max([r for r in ncal if r["group"] == "Traditional"], key=lambda r: float(r["accuracy_pct"]))
+def best_row(rows: list[dict[str, object]], dataset: str, group: str | None = None) -> dict[str, object]:
+    subset = [r for r in rows if r["dataset"] == dataset]
+    if group:
+        subset = [r for r in subset if r["group"] == group]
+    return max(subset, key=lambda r: float(r["accuracy_pct"]))
+
+
+def write_report_tex(cls_rows: list[dict[str, object]], mvsec_rows: list[dict[str, object]]) -> None:
+    nmnist_best_learning = best_row(cls_rows, "nmnist", "Learning-based")
+    nmnist_best_trad = best_row(cls_rows, "nmnist", "Traditional")
+    ncal_best_learning = best_row(cls_rows, "ncaltech101", "Learning-based")
+    ncal_best_trad = best_row(cls_rows, "ncaltech101", "Traditional")
+    cifar_best_learning = best_row(cls_rows, "cifar10dvs", "Learning-based")
+    cifar_best_trad = best_row(cls_rows, "cifar10dvs", "Traditional")
+
     mvsec_best = min(mvsec_rows, key=lambda r: float(r["aee"]))
     mvsec_best_learning = min([r for r in mvsec_rows if r["group"] == "Learning-based"], key=lambda r: float(r["aee"]))
+    mvsec_best_trad = min([r for r in mvsec_rows if r["group"] == "Traditional"], key=lambda r: float(r["aee"]))
 
     tex = rf"""\documentclass[11pt]{{article}}
 \usepackage[a4paper,margin=0.82in]{{geometry}}
@@ -320,53 +508,55 @@ def write_report(cls_rows: list[dict[str, object]], mvsec_rows: list[dict[str, s
 \setlength{{\parskip}}{{0.62em}}
 \setlength{{\parindent}}{{0pt}}
 
-\title{{Traditional 与 Learning-based 事件表示对比报告}}
+\title{{Traditional 与 Learning-based 事件表示对比报告（最新结果）}}
 \author{{}}
-\date{{2026-05-08}}
+\date{{2026-05-20}}
 
 \begin{{document}}
 \sloppy
 \maketitle
 
-\paragraph{{Protocol Alignment.}} 本版报告将 N-MNIST learning-based 结果更新为完整 GPU aligned run，因此 N-MNIST 中 7 个 learning-based 方法和 5 个 traditional 方法现在可以放入同一张正式 accuracy 图中比较。N-MNIST 采用官方 train/test split，learning-based 运行设置为 RTX 4090、100 epoch 上限、early stopping patience 10、batch size 32、learning rate 0.0001、weight decay 0.0001 和 seed 42；traditional baseline 采用已记录的官方 test set 结果。N-Caltech101 与 MVSEC 沿用仓库已有结果，其中 MVSEC 是 outdoor\_day1/2 训练、indoor\_flying1/2/3 测试的统一 optical-flow protocol。
+\paragraph{{Scope.}} 本报告统一汇总仓库内截至 2026-05-20 的最新可用结果：N-MNIST、N-Caltech101、CIFAR10-DVS 分类结果，以及 MVSEC 统一 optical-flow protocol 结果。图表和表格均由同一脚本重新生成，旧图与旧表已清理。
 
 \begin{{figure}}[t]
   \centering
   \includegraphics[width=0.90\linewidth]{{nmnist_accuracy_full_aligned.pdf}}
-  \caption{{N-MNIST 完整官方测试集准确率对比。蓝色为 learning-based 方法，橙色为 traditional baseline。}}
-  \label{{fig:nmnist-acc}}
+  \caption{{N-MNIST 分类准确率对比（最新版）。}}
 \end{{figure}}
 
-\paragraph{{N-MNIST Is Saturated But Now Comparable.}} 在完整 N-MNIST setting 下，最佳方法是 {latex_escape(str(best_nmnist['method_label']))}，test accuracy 为 {float(best_nmnist['accuracy_pct']):.2f}\%。最佳 learning-based 方法 {latex_escape(str(best_nmnist_learning['method_label']))} 为 {float(best_nmnist_learning['accuracy_pct']):.2f}\%，最佳 traditional 方法 {latex_escape(str(best_nmnist_trad['method_label']))} 为 {float(best_nmnist_trad['accuracy_pct']):.2f}\%，差距为 {float(best_nmnist_learning['accuracy_pct']) - float(best_nmnist_trad['accuracy_pct']):.2f} 个百分点。除 Binary Event Image 外，大多数方法集中在 98.18--99.40\% 区间，说明 N-MNIST 已接近饱和，适合验证 pipeline 和基本表示能力，但不适合单独作为强结论来源。最弱方法 {latex_escape(str(worst_nmnist['method_label']))} 为 {float(worst_nmnist['accuracy_pct']):.2f}\%，主要说明完全二值化的事件投影会丢失可见信息。
+\paragraph{{N-MNIST.}} 最佳 learning-based 方法为 {latex_escape(str(nmnist_best_learning['method_label']))} ({float(nmnist_best_learning['accuracy_pct']):.2f}\%)，最佳 traditional 方法为 {latex_escape(str(nmnist_best_trad['method_label']))} ({float(nmnist_best_trad['accuracy_pct']):.2f}\%)，差距为 {float(nmnist_best_learning['accuracy_pct']) - float(nmnist_best_trad['accuracy_pct']):.2f} 个百分点。该任务整体接近饱和区间。
 
 \begin{{figure}}[t]
   \centering
   \includegraphics[width=0.88\linewidth]{{nmnist_accuracy_epoch_scatter.pdf}}
-  \caption{{N-MNIST 准确率与最佳 epoch 的关系。点大小随输入通道数变化，用于展示表示维度、收敛位置和准确率之间的权衡。}}
-  \label{{fig:nmnist-eff}}
+  \caption{{N-MNIST 准确率与最佳 epoch 关系。}}
 \end{{figure}}
-
-\paragraph{{Accuracy-Efficiency Trade-off.}} N-MNIST 的 best epoch 显示出比最终准确率更有区分度的模式。Learning-based 方法大多在第 15--26 epoch 取得最佳结果，其中 Matrix-LSTM 在第 15 epoch 达到 99.40\%，GET 在第 23 epoch 达到 99.33\%，EST 在第 16 epoch 达到 99.28\%。Traditional 方法中 Timestamp Image 的最佳 epoch 仅为 6，准确率仍有 98.05\%；Voxel Grid 在第 12 epoch 达到 99.08\%。这说明更复杂或多通道的表示未必总是需要更长训练，但在 N-MNIST 这种饱和任务中，小幅准确率提升通常伴随更高表示维度或更复杂 adapter。
 
 \begin{{figure}}[t]
   \centering
   \includegraphics[width=0.92\linewidth]{{ncaltech101_accuracy_full_aligned.pdf}}
-  \caption{{N-Caltech101 分类准确率对比。该任务比 N-MNIST 更能拉开 representation capacity 的差异。}}
-  \label{{fig:ncaltech}}
+  \caption{{N-Caltech101 分类准确率对比（最新版）。}}
 \end{{figure}}
 
-\paragraph{{N-Caltech101 Reveals Larger Capacity Gaps.}} N-Caltech101 的结果与 N-MNIST 不同。当前最佳 learning-based 方法 {latex_escape(str(best_ncal['method_label']))} 为 {float(best_ncal['accuracy_pct']):.2f}\%，最佳 traditional 方法 {latex_escape(str(best_ncal_trad['method_label']))} 为 {float(best_ncal_trad['accuracy_pct']):.2f}\%，差距达到 {float(best_ncal['accuracy_pct']) - float(best_ncal_trad['accuracy_pct']):.2f} 个百分点。这个差距比 N-MNIST 明显得多，说明在类别数更多、形状变化更复杂的分类任务上，learning-based representation 更能利用事件流中的跨时间结构；traditional 方法在此处更适合作为非学习表示下界和计算成本参照。
+\paragraph{{N-Caltech101.}} 最佳 learning-based 方法为 {latex_escape(str(ncal_best_learning['method_label']))} ({float(ncal_best_learning['accuracy_pct']):.2f}\%)，最佳 traditional 方法为 {latex_escape(str(ncal_best_trad['method_label']))} ({float(ncal_best_trad['accuracy_pct']):.2f}\%)，差距为 {float(ncal_best_learning['accuracy_pct']) - float(ncal_best_trad['accuracy_pct']):.2f} 个百分点。
+
+\begin{{figure}}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{{cifar10dvs_accuracy_full_aligned.pdf}}
+  \caption{{CIFAR10-DVS 分类准确率对比（最新版）。}}
+\end{{figure}}
+
+\paragraph{{CIFAR10-DVS.}} 最佳 learning-based 方法为 {latex_escape(str(cifar_best_learning['method_label']))} ({float(cifar_best_learning['accuracy_pct']):.2f}\%)，最佳 traditional 方法为 {latex_escape(str(cifar_best_trad['method_label']))} ({float(cifar_best_trad['accuracy_pct']):.2f}\%)，差距为 {float(cifar_best_learning['accuracy_pct']) - float(cifar_best_trad['accuracy_pct']):.2f} 个百分点。
 
 \begin{{figure}}[t]
   \centering
   \includegraphics[width=0.88\linewidth]{{mvsec_aee_full_aligned.pdf}}
-  \caption{{MVSEC optical flow 统一协议 AEE 对比。AEE 越低越好，横轴采用局部放大。}}
-  \label{{fig:mvsec}}
+  \caption{{MVSEC AEE 对比（统一 protocol，越低越好）。}}
 \end{{figure}}
 
-\paragraph{{MVSEC Gives A Counterpoint.}} MVSEC optical flow 结果提供了与分类任务不同的证据。在统一 decoder 和统一 early-stopping protocol 下，最佳方法是 {latex_escape(str(mvsec_best['method_label']))}，AEE 为 {float(mvsec_best['aee']):.4f}，outlier rate 为 {float(mvsec_best['outlier_percent']):.2f}\%；最佳 learning-based 方法 {latex_escape(str(mvsec_best_learning['method_label']))} 的 AEE 为 {float(mvsec_best_learning['aee']):.4f}。这说明 timestamp-preserving traditional representation 在 dense motion estimation 中仍然很强。严谨表述应是：在本仓库统一 optical-flow protocol 下，Timestamp Image 优于当前 learning-based 最优结果；这不等价于否定 learning-based 方法在其原论文完整系统中的潜力。
+\paragraph{{MVSEC Optical Flow.}} 当前总体最优为 {latex_escape(str(mvsec_best['method_label']))}，AEE={float(mvsec_best['aee']):.4f}。最佳 learning-based 为 {latex_escape(str(mvsec_best_learning['method_label']))} (AEE={float(mvsec_best_learning['aee']):.4f})，最佳 traditional 为 {latex_escape(str(mvsec_best_trad['method_label']))} (AEE={float(mvsec_best_trad['aee']):.4f})。在该统一设置下，learning 与 traditional 的最优结果差距较小。
 
-\paragraph{{Takeaway For Presentation.}} 当前证据支持一个分任务结论。N-MNIST 上两类方法都接近天花板，最佳 learning-based 只比最佳 traditional 高 0.32 个百分点，因此不应过度解读微小排名；N-Caltech101 上 learning-based 优势清晰，最佳方法比最佳 traditional 高 17.51 个百分点；MVSEC 上 traditional Timestamp Image 在统一协议下取得最低 AEE，说明传统事件表示不是弱 baseline。汇报时可以强调：传统方法在简单分类和光流估计中仍然具有竞争力，而 learning-based 方法在更复杂分类任务中展现出更强的表示容量。
+\paragraph{{Summary.}} 最新结果显示：N-MNIST 上两组方法差距很小；N-Caltech101 与 CIFAR10-DVS 上 learning-based 优势更明显；MVSEC 上 traditional 仍保持竞争力。
 
 \end{{document}}
 """
@@ -374,24 +564,29 @@ def write_report(cls_rows: list[dict[str, object]], mvsec_rows: list[dict[str, s
 
 
 def main() -> None:
+    clean_out_dir()
     OUT.mkdir(parents=True, exist_ok=True)
+
     trad_rows = load_traditional_rows()
-    nmnist_learning = load_nmnist_learning_rows()
-    ncal_learning = load_ncal_learning_rows()
-    cls_rows = sorted(trad_rows + nmnist_learning + ncal_learning, key=lambda r: (str(r["dataset"]), str(r["group"]), -float(r["accuracy_pct"])))
-    mvsec_rows = read_csv(MVSEC_CSV)
+    learning_rows = load_learning_rows()
+    cls_rows = trad_rows + learning_rows
+    cls_rows = sorted(cls_rows, key=lambda r: (str(r["dataset"]), str(r["group"]), -float(r["accuracy_pct"]), str(r["method"])))
+
+    nmnist_learning = [r for r in learning_rows if r["dataset"] == "nmnist"]
+    mvsec_rows = load_mvsec_rows()
 
     write_csv(OUT / "classification_full_aligned_summary.csv", cls_rows)
     write_csv(OUT / "nmnist_learning_full_aligned_summary.csv", nmnist_learning)
     write_csv(OUT / "mvsec_comparison_summary.csv", mvsec_rows)
-    write_readme(nmnist_learning)
 
-    plot_accuracy(cls_rows, "nmnist", "nmnist_accuracy_full_aligned", "N-MNIST Classification: Full Aligned Results", xmin_pad=1.2)
+    plot_accuracy(cls_rows, "nmnist", "nmnist_accuracy_full_aligned", "N-MNIST Classification (Latest)", xmin_pad=1.2)
     plot_nmnist_efficiency(cls_rows)
-    plot_accuracy(cls_rows, "ncaltech101", "ncaltech101_accuracy_full_aligned", "N-Caltech101 Classification", xmin_pad=3.0)
+    plot_accuracy(cls_rows, "ncaltech101", "ncaltech101_accuracy_full_aligned", "N-Caltech101 Classification (Latest)", xmin_pad=3.0)
+    plot_accuracy(cls_rows, "cifar10dvs", "cifar10dvs_accuracy_full_aligned", "CIFAR10-DVS Classification (Latest)", xmin_pad=3.0)
     plot_mvsec(mvsec_rows)
-    write_report(cls_rows, mvsec_rows)
-    print(f"Wrote full aligned report assets to {OUT}")
+    write_report_tex(cls_rows, mvsec_rows)
+
+    print(f"Wrote refreshed full-aligned report assets to {OUT}")
 
 
 if __name__ == "__main__":
