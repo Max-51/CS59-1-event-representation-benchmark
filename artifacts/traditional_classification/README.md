@@ -14,6 +14,7 @@ to regenerate the summaries from local experiment archives.
 - Datasets:
   - N-MNIST with the official train/test split
   - N-Caltech101 with `data/splits/tonic_split_seed42.json`
+  - CIFAR10-DVS with deterministic `random80` split (`train=8000`, `test=2000`)
 - Traditional representations:
   - `event_frame`
   - `binary_event_image`
@@ -67,11 +68,18 @@ regenerating these result summaries, not for running the benchmark itself.
 | N-Caltech101 | timestamp_image | 13 | 0.5007 | 0.5293 | 793.65 |
 | N-Caltech101 | time_surface | 13 | 0.4921 | 0.5178 | 838.09 |
 | N-Caltech101 | voxel_grid | 11 | 0.5007 | 0.4966 | 974.24 |
+| CIFAR10-DVS | event_frame | 8 | 0.4495 | 0.4495 | - |
+| CIFAR10-DVS | binary_event_image | 11 | 0.3985 | 0.3985 | - |
+| CIFAR10-DVS | timestamp_image | 6 | 0.4165 | 0.4165 | - |
+| CIFAR10-DVS | time_surface | 5 | 0.4330 | 0.4330 | - |
+| CIFAR10-DVS | voxel_grid | 8 | 0.4395 | 0.4395 | - |
 
 ## Notes
 
 - Checkpoints are intentionally excluded from Git because they are large and
   are not needed for reading the benchmark summary.
+- CIFAR10-DVS result package for this run is stored under:
+  `artifacts/traditional_classification/cifar10dvs/20260519_cifar10dvs_aligned_cls_v2_traditional/`.
 - Learning-based results should be added with the schema in
   `tables/learning_based_classification_template.csv` so that traditional and
   learning-based representations can be compared under the same fields.
