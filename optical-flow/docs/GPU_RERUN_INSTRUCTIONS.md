@@ -31,13 +31,10 @@ The updated runner uses:
 - max epochs: 100
 - batch size: 8
 - early-stop patience: 10
-- default validation: 20 block-random outdoor windows for the small timestamp
-  sanity run
+- default validation: 20 block-random outdoor windows, matching the committed
+  2026-05-16 result protocol
 - event/flow pairing: timestamp-aligned event intervals from flow GT timestamps
-- optional training densification: split each outdoor timestamp interval into
-  multiple training subwindows while keeping evaluation unchanged
-- metrics: event-valid AEE / KITTI-style Outlier, evaluated only on pixels that
-  fired at least one event in the corresponding event window
+- metrics: AEE / KITTI-style Outlier over valid GT flow pixels
 
 ## 2. Prepare Data
 
@@ -102,7 +99,7 @@ sequence. It is a quick sanity check before launching the long run.
 
 ## 4. Run the Learning Benchmark
 
-Small sanity run, matching the one-window-per-flow timestamp setting:
+Main learning run, matching the committed one-window-per-flow timestamp setting:
 
 ```bash
 DATA_ROOT=/path/to/mvsec \
@@ -111,23 +108,6 @@ BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
 
-Training-densified probe, intended to test whether the small 149-window training
-set is the main bottleneck:
-
-```bash
-DATA_ROOT=/path/to/mvsec \
-TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW=60 \
-VAL_WINDOWS=1000 \
-OMP_NUM_THREADS=8 \
-BATCH_SIZE=8 \
-bash scripts/run_mvsec_100e_all_early_stop.sh ergo
-```
-
-This keeps evaluation as one timestamp-aligned window per indoor flow frame. Only
-the outdoor training side is densified. With the current MVSEC files this should
-create roughly 10k outdoor training/validation candidates before early-stop
-splitting.
-
 The runner writes:
 
 - per-method JSON results under `results/`
@@ -135,7 +115,7 @@ The runner writes:
 - per-method curve CSV files under `logs/curves/`
 - a packaged result archive in the current `optical-flow/` folder
 
-The JSON field `metric_scope` should be `event_valid`.
+The JSON field `metric_scope` should be `full_gt_valid`.
 
 If GPU memory is tight, keep `BATCH_SIZE=8` first and only lower it if the run
 fails with CUDA out-of-memory.

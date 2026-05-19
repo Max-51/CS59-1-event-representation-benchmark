@@ -32,10 +32,8 @@ current formal result artifacts are committed under
 - training: max 100 epochs, batch size 8, early-stop patience 10
 - validation: block-random outdoor validation
 - event/flow pairing: timestamp-aligned event intervals from flow GT timestamps
-- optional probe: `TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW` can densify only the
-  outdoor training side while keeping indoor evaluation unchanged
-- metrics: event-valid AEE / KITTI-style Outlier, evaluated only on pixels that
-  fired at least one event in the corresponding event window
+- metrics: AEE / KITTI-style Outlier over valid GT flow pixels, matching the
+  committed 2026-05-16 result table
 - default learning methods: `ergo`, `est`, `event_pretraining`, `evrepsl`,
   `get`, `matrixlstm`
 - optional traditional methods under the same protocol:
@@ -93,20 +91,6 @@ BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
 
-Training-densified ERGO probe:
-
-```bash
-DATA_ROOT=/path/to/processed/mvsec \
-TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW=60 \
-VAL_WINDOWS=1000 \
-OMP_NUM_THREADS=8 \
-BATCH_SIZE=8 \
-bash scripts/run_mvsec_100e_all_early_stop.sh ergo
-```
-
-Use this only as an adapted training-sample-density check. It is not a claim
-that the original papers used this exact subwindow construction.
-
 Traditional-method rerun under the same timestamp-aligned protocol:
 
 ```bash
@@ -154,7 +138,7 @@ MVSEC unified downstream optical-flow benchmark / adapted reproduction.
 Six runnable event representations are compared under the same EVFlowNet-like
 decoder and the same outdoor-train / indoor-test protocol.
 Event windows use timestamp-aligned intervals from flow GT timestamps.
-Formal results report event-valid sparse-flow AEE / Outlier.
+Formal results report AEE / KITTI-style Outlier over valid GT flow pixels.
 ```
 
 Avoid:

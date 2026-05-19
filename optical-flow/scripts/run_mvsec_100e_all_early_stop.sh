@@ -39,7 +39,6 @@ WANDB_PROJECT="${WANDB_PROJECT:-}"
 WANDB_MODE="${WANDB_MODE:-offline}"
 BATCH_SIZE="${BATCH_SIZE:-8}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
-TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW="${TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW:-1}"
 
 if [[ -z "$DATA_ROOT" ]]; then
   cat >&2 <<'EOF'
@@ -48,7 +47,6 @@ ERROR: DATA_ROOT is not set.
 Set DATA_ROOT to the processed MVSEC folder before running, for example:
 
   DATA_ROOT=/path/to/mvsec OMP_NUM_THREADS=8 BATCH_SIZE=8 bash scripts/run_mvsec_100e_all_early_stop.sh
-  DATA_ROOT=/path/to/mvsec TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW=60 VAL_WINDOWS=1000 bash scripts/run_mvsec_100e_all_early_stop.sh ergo
   DATA_ROOT=/path/to/mvsec METHOD_GROUP=traditional bash scripts/run_mvsec_100e_all_early_stop.sh
 
 Expected files include:
@@ -91,7 +89,6 @@ for method in "${METHODS[@]}"; do
     --eval-pair "$DATA_ROOT/indoor_flying/indoor_flying3_left_events_6m.h5:$DATA_ROOT/indoor_flying/indoor_flying3_gt_flow_full.npz" \
     --epochs "$EPOCHS" \
     --window-alignment timestamp \
-    --train-timestamp-subwindows-per-flow "$TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW" \
     --batch-size "$BATCH_SIZE" \
     --eval-batch-size "$EVAL_BATCH_SIZE" \
     --device cuda \
@@ -109,7 +106,7 @@ for method in "${METHODS[@]}"; do
   echo "===== done ${method} ====="
 done
 
-PACKAGE_PATH="$PACKAGE_DIR/mvsec_eventvalid_timestamp_${METHOD_GROUP}_tw${TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW}_vw${VAL_WINDOWS}_bs${BATCH_SIZE}_e${EPOCHS}_earlystop_results_$(date +%Y%m%d_%H%M).tar.gz"
+PACKAGE_PATH="$PACKAGE_DIR/mvsec_timestamp_${METHOD_GROUP}_vw${VAL_WINDOWS}_bs${BATCH_SIZE}_e${EPOCHS}_earlystop_results_$(date +%Y%m%d_%H%M).tar.gz"
 tar -czf "$PACKAGE_PATH" "$OUT_DIR" "$LOG_DIR" docs README.md README_FOR_GROUP.md
 echo "===== all done ====="
 ls -lh "$PACKAGE_PATH"

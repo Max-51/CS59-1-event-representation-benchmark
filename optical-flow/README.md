@@ -21,14 +21,10 @@ downstream head.
 - Decoder: shared `EVFlowNetLike`.
 - Training protocol: max 100 epochs, batch size 8, early-stop patience 10.
 - Validation: block-random validation sampled from outdoor training windows.
-- Metrics: event-valid AEE/EPE and KITTI-style outlier percentage. Only
-  pixels with at least one event in the corresponding event window are used,
-  with invalid GT pixels excluded.
+- Metrics: AEE/EPE and KITTI-style outlier percentage over valid GT flow
+  pixels. This matches the committed 2026-05-16 result table.
 - Event/flow pairing: timestamp-aligned event intervals from flow GT
   timestamps.
-- Optional training-density probe: `TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW` splits
-  only outdoor training intervals into multiple event subwindows. Indoor
-  evaluation remains one timestamp-aligned window per flow frame.
 - Data correction: event HDF5 timestamps must be stored with float64 precision.
   Older processed event `.h5` files written with float32 Unix timestamps are not
   suitable for the formal rerun.
@@ -75,7 +71,7 @@ The formal 2026-05-16 run used:
 - method groups: learning (`ergo`, `est`, `event_pretraining`, `evrepsl`,
   `get`, `matrixlstm`) and traditional (`event_frame`, `binary_event_image`,
   `timestamp_image`, `time_surface`, `voxel_grid`)
-- official metric scope: event-valid / sparse optical-flow evaluation
+- official metric scope: full valid GT flow pixels with KITTI-style outlier
 
 Before launching the long run, use `scripts/check_mvsec_alignment.py` to check
 that each event file covers the corresponding flow timestamps and that event
@@ -95,21 +91,6 @@ OMP_NUM_THREADS=8 \
 BATCH_SIZE=8 \
 bash scripts/run_mvsec_100e_all_early_stop.sh
 ```
-
-To probe whether the small `train_windows=149` setting is the main bottleneck,
-run one learning method with densified outdoor training windows:
-
-```bash
-DATA_ROOT=/path/to/processed/mvsec \
-TRAIN_TIMESTAMP_SUBWINDOWS_PER_FLOW=60 \
-VAL_WINDOWS=1000 \
-OMP_NUM_THREADS=8 \
-BATCH_SIZE=8 \
-bash scripts/run_mvsec_100e_all_early_stop.sh ergo
-```
-
-This is an adapted training-sample-density check, not a claim that each source
-paper used this exact training sampler.
 
 To rerun the traditional methods under the same timestamp-aligned protocol:
 
@@ -144,7 +125,8 @@ or `--method-group learning`.
 - Do not directly compare the local numbers as official-paper
   reproduction numbers, because several papers do not release the same
   optical-flow downstream code.
-- Report the formal table as event-valid AEE / Outlier, not full-frame AEE.
+- Report the formal table as AEE / KITTI-style Outlier over valid GT flow
+  pixels, matching the committed 2026-05-16 results.
 - Treat `OmniEvent✳` as reported-only context, not as a local run in this
   pipeline.
 - Raw MVSEC data and processed `.h5` / `.npz` data are not committed to GitHub.
